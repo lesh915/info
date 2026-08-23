@@ -1,0 +1,846 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReAct 패밀리</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F5F6F9;
+    --surface:#FFFFFF;
+    --surface-2:#EDEFF4;
+    --ink:#1B2030;
+    --ink-muted:#626B7A;
+    --line:#DBDFE6;
+    --accent:#3D4C8C;
+    --accent-soft:#E7E9F6;
+    --react:#B8622A;
+    --plan:#1E8A72;
+    --rewoo:#6E56CF;
+    --reflexion:#C43D6B;
+    --lats:#2B7FB0;
+    --good:#1E8A72;
+    --warn:#B8622A;
+    --shadow: 0 1px 2px rgba(27,32,48,0.04), 0 8px 24px -12px rgba(27,32,48,0.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12151D;
+      --surface:#191D28;
+      --surface-2:#212635;
+      --ink:#E7E9F0;
+      --ink-muted:#9AA2B4;
+      --line:#2C3242;
+      --accent:#95A3F2;
+      --accent-soft:#232A4A;
+      --react:#E4934F;
+      --plan:#45CBA6;
+      --rewoo:#B0A0F7;
+      --reflexion:#F286AC;
+      --lats:#65B7EE;
+      --good:#45CBA6;
+      --warn:#E4934F;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12151D;
+    --surface:#191D28;
+    --surface-2:#212635;
+    --ink:#E7E9F0;
+    --ink-muted:#9AA2B4;
+    --line:#2C3242;
+    --accent:#95A3F2;
+    --accent-soft:#232A4A;
+    --react:#E4934F;
+    --plan:#45CBA6;
+    --rewoo:#B0A0F7;
+    --reflexion:#F286AC;
+    --lats:#65B7EE;
+    --good:#45CBA6;
+    --warn:#E4934F;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans KR","Noto Sans KR",-apple-system,sans-serif;
+    line-height:1.6;
+  }
+  ::selection{ background:var(--accent-soft); color:var(--ink); }
+
+  a{ color:var(--accent); }
+  a:focus-visible, button:focus-visible, .toc a:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;
+  }
+
+  .shell{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 24px;
+    display:grid;
+    grid-template-columns:220px minmax(0,1fr);
+    gap:56px;
+  }
+  @media (max-width:920px){
+    .shell{ grid-template-columns:1fr; }
+  }
+
+  /* ---------- spine nav ---------- */
+  .spine{
+    position:sticky;
+    top:28px;
+    align-self:start;
+    padding-top:120px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  @media (max-width:920px){
+    .spine{
+      position:static;
+      padding-top:0;
+      flex-direction:row;
+      overflow-x:auto;
+      gap:6px;
+      padding-bottom:8px;
+      margin-top:24px;
+      border-bottom:1px solid var(--line);
+    }
+  }
+  .spine a{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 10px;
+    border-radius:8px;
+    text-decoration:none;
+    color:var(--ink-muted);
+    font-size:0.87rem;
+    white-space:nowrap;
+    transition:background .15s, color .15s;
+  }
+  .spine a:hover{ background:var(--surface-2); color:var(--ink); }
+  .spine .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--dot,var(--accent));
+    flex:none;
+  }
+
+  /* ---------- header / hero ---------- */
+  header.hero{
+    padding:64px 0 40px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:0.72rem;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+    margin:0 0 14px;
+  }
+  h1{
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-weight:700;
+    font-size:clamp(1.7rem,3.2vw,2.5rem);
+    line-height:1.28;
+    letter-spacing:-0.01em;
+    margin:0 0 18px;
+    text-wrap:balance;
+    max-width:18ch;
+  }
+  .lede{
+    font-family:"Noto Serif KR",serif;
+    font-size:1.05rem;
+    color:var(--ink-muted);
+    max-width:62ch;
+    margin:0 0 32px;
+  }
+  .lede strong{ color:var(--ink); font-weight:600; }
+
+  main{ padding-bottom:100px; min-width:0; }
+
+  section{ padding:52px 0; border-bottom:1px solid var(--line); scroll-margin-top:28px; }
+  section:last-of-type{ border-bottom:none; }
+
+  h2{
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-weight:700;
+    font-size:1.5rem;
+    margin:0 0 6px;
+    letter-spacing:-0.005em;
+  }
+  .origin{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:0.8rem;
+    color:var(--ink-muted);
+    margin:0 0 28px;
+  }
+  .origin a{ color:var(--ink-muted); text-decoration-color:var(--line); }
+  .origin a:hover{ color:var(--accent); }
+
+  h3{
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-weight:600;
+    font-size:1rem;
+    margin:36px 0 12px;
+    color:var(--ink);
+  }
+
+  p{
+    font-family:"Noto Serif KR",serif;
+    font-size:0.98rem;
+    max-width:66ch;
+    margin:0 0 14px;
+    color:var(--ink);
+  }
+  p.muted{ color:var(--ink-muted); }
+
+  /* pattern section local accent */
+  .pattern{ --accent-local:var(--accent); }
+  .pattern[data-pattern="plan"]{ --accent-local:var(--plan); }
+  .pattern[data-pattern="rewoo"]{ --accent-local:var(--rewoo); }
+  .pattern[data-pattern="reflexion"]{ --accent-local:var(--reflexion); }
+  .pattern[data-pattern="lats"]{ --accent-local:var(--lats); }
+  .pattern[data-pattern="react"]{ --accent-local:var(--react); }
+  .pattern .eyebrow{ color:var(--accent-local); }
+  .pattern .origin{ border-left:2px solid var(--accent-local); padding-left:10px; }
+
+  /* ---------- flow diagram ---------- */
+  .diagram{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px 22px;
+    box-shadow:var(--shadow);
+    margin:8px 0 28px;
+    overflow-x:auto;
+  }
+  .flow{
+    display:flex;
+    align-items:center;
+    gap:0;
+    min-width:max-content;
+  }
+  .node{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:0.8rem;
+    font-weight:500;
+    color:var(--ink);
+    background:var(--bg);
+    border:1.5px solid var(--accent-local);
+    border-radius:9px;
+    padding:10px 14px;
+    text-align:center;
+    line-height:1.35;
+    white-space:normal;
+    max-width:150px;
+  }
+  .node .tag{
+    display:block;
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-size:0.68rem;
+    color:var(--ink-muted);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-bottom:3px;
+  }
+  .arrow{
+    flex:none;
+    width:30px;
+    height:1.5px;
+    background:var(--accent-local);
+    position:relative;
+    margin:0 4px;
+    opacity:0.65;
+  }
+  .arrow::after{
+    content:"";
+    position:absolute;
+    right:0; top:50%;
+    width:7px; height:7px;
+    border-right:1.5px solid var(--accent-local);
+    border-bottom:1.5px solid var(--accent-local);
+    transform:translate(-2px,-50%) rotate(-45deg);
+  }
+  .stack{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .loop-note{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:0.75rem;
+    color:var(--accent-local);
+    margin-top:14px;
+    background:var(--accent-soft);
+    padding:6px 12px;
+    border-radius:20px;
+  }
+
+  /* tree diagram for LATS */
+  .tree{ display:flex; flex-direction:column; align-items:center; gap:0; min-width:max-content; }
+  .tree .root{ margin-bottom:0; }
+  .tree .branch-line{ width:1.5px; height:20px; background:var(--accent-local); opacity:0.65; }
+  .tree .children{ display:flex; gap:18px; position:relative; padding-top:20px; }
+  .tree .children::before{
+    content:"";
+    position:absolute; top:0; left:calc(150px/2 + 9px); right:calc(150px/2 + 9px);
+    height:1.5px; background:var(--accent-local); opacity:0.65;
+  }
+  .tree .children .node{ position:relative; }
+  .tree .children .node::before{
+    content:"";
+    position:absolute; top:-20px; left:50%;
+    width:1.5px; height:20px; background:var(--accent-local); opacity:0.65;
+  }
+
+  /* ---------- stat strip ---------- */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+    margin:10px 0 30px;
+  }
+  .stat{
+    background:var(--surface);
+    padding:16px 16px;
+  }
+  .stat .label{
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-size:0.7rem;
+    color:var(--ink-muted);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    margin:0 0 6px;
+  }
+  .stat .value{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:0.92rem;
+    font-weight:600;
+    color:var(--ink);
+  }
+
+  /* ---------- pros / cons ---------- */
+  .split{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin:8px 0 8px;
+  }
+  @media (max-width:640px){ .split{ grid-template-columns:1fr; } }
+  .box{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:18px 20px;
+  }
+  .box h4{
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-size:0.85rem;
+    font-weight:600;
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .box.good h4{ color:var(--good); }
+  .box.warn h4{ color:var(--warn); }
+  .box ul{ margin:0; padding-left:18px; }
+  .box li{
+    font-family:"Noto Serif KR",serif;
+    font-size:0.92rem;
+    margin-bottom:8px;
+    color:var(--ink);
+  }
+  .box li:last-child{ margin-bottom:0; }
+
+  .note{
+    background:var(--accent-soft);
+    border-left:3px solid var(--accent-local,var(--accent));
+    border-radius:0 10px 10px 0;
+    padding:14px 18px;
+    margin:20px 0;
+    font-family:"Noto Serif KR",serif;
+    font-size:0.92rem;
+    color:var(--ink);
+  }
+  .note strong{ font-family:"IBM Plex Sans KR",sans-serif; }
+
+  /* ---------- comparison table ---------- */
+  .table-wrap{
+    overflow-x:auto;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--surface);
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:760px;
+    font-size:0.86rem;
+  }
+  thead th{
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-weight:600;
+    text-align:left;
+    padding:13px 16px;
+    background:var(--surface-2);
+    color:var(--ink);
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  thead th:first-child{ color:var(--ink-muted); font-weight:500; }
+  thead th.h-react{ color:var(--react); }
+  thead th.h-plan{ color:var(--plan); }
+  thead th.h-rewoo{ color:var(--rewoo); }
+  thead th.h-reflexion{ color:var(--reflexion); }
+  thead th.h-lats{ color:var(--lats); }
+  tbody th{
+    text-align:left;
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-weight:500;
+    font-size:0.83rem;
+    color:var(--ink-muted);
+    padding:12px 16px;
+    white-space:nowrap;
+  }
+  tbody td{
+    font-family:"Noto Serif KR",serif;
+    padding:12px 16px;
+    color:var(--ink);
+    border-top:1px solid var(--line);
+    vertical-align:top;
+  }
+  tbody tr:first-child td, tbody tr:first-child th{ border-top:1px solid var(--line); }
+
+  /* ---------- guide cards ---------- */
+  .guide-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:14px;
+    margin-top:20px;
+  }
+  .guide-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:3px solid var(--dot);
+    border-radius:0 10px 10px 0;
+    padding:16px 18px;
+  }
+  .guide-card .k{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--dot);
+    margin:0 0 8px;
+  }
+  .guide-card p{ font-size:0.9rem; margin:0; }
+
+  footer{
+    padding:36px 0 60px;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:0.78rem;
+    color:var(--ink-muted);
+  }
+  footer .src-title{
+    font-family:"IBM Plex Sans KR",sans-serif;
+    font-size:0.85rem;
+    color:var(--ink);
+    font-weight:600;
+    margin:0 0 12px;
+  }
+  footer ul{ margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:6px; }
+  footer a{ color:var(--ink-muted); }
+  footer a:hover{ color:var(--accent); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+
+<div class="shell">
+  <nav class="spine" aria-label="섹션 이동">
+    <a href="#intro" style="--dot:var(--accent)"><span class="dot"></span>시작하며</a>
+    <a href="#react" style="--dot:var(--react)"><span class="dot"></span>ReAct 기본기</a>
+    <a href="#plan" style="--dot:var(--plan)"><span class="dot"></span>Plan-and-Execute</a>
+    <a href="#rewoo" style="--dot:var(--rewoo)"><span class="dot"></span>ReWOO</a>
+    <a href="#reflexion" style="--dot:var(--reflexion)"><span class="dot"></span>Reflexion</a>
+    <a href="#lats" style="--dot:var(--lats)"><span class="dot"></span>LATS 외</a>
+    <a href="#compare" style="--dot:var(--accent)"><span class="dot"></span>비교표</a>
+    <a href="#guide" style="--dot:var(--accent)"><span class="dot"></span>선택 가이드</a>
+  </nav>
+
+  <main>
+    <header class="hero" id="intro">
+      <p class="eyebrow">AGENT REASONING PATTERNS</p>
+      <h1>ReAct 이후, 에이전트는 생각하는 순서를 바꾸기 시작했다</h1>
+      <p class="lede">
+        2022년 제안된 <strong>ReAct</strong>(Reason + Act)는 LLM이 한 스텝마다 생각하고(Thought), 행동하고(Action),
+        관찰한(Observation) 뒤 다시 생각하는 순환 구조로 도구 사용 에이전트의 기본형이 되었다.
+        하지만 스텝마다 LLM을 호출하는 구조는 <strong>토큰 비용과 지연시간이 단계 수에 비례해 늘어나고</strong>,
+        한 스텝의 실수가 다음 스텝으로 그대로 전파되며, 전체 목표를 조망하지 못한 채 매번 다음 한 걸음만 결정한다는
+        한계를 가진다. 이후 등장한 변형들은 이 세 가지 문제 — <strong>비용, 오류 전파, 근시안적 계획</strong> — 중
+        하나 이상을 겨냥해 설계되었다. 이 문서는 대표적인 네 가지 변형인 <strong>Plan-and-Execute, ReWOO, Reflexion</strong>과
+        더불어 이후 등장한 <strong>LATS</strong> 등을 원 논문을 기준으로 정리한다.
+      </p>
+    </header>
+
+    <!-- ReAct baseline -->
+    <section class="pattern" data-pattern="react" id="react">
+      <p class="eyebrow">BASELINE · 2022</p>
+      <h2>ReAct — 추론과 행동을 한 스텝씩 엮는다</h2>
+      <p class="origin">Yao et al., 2022 · <a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">"ReAct: Synergizing Reasoning and Acting in Language Models"</a> (ICLR 2023)</p>
+
+      <div class="diagram">
+        <div class="flow">
+          <div class="node"><span class="tag">Thought</span>다음에 뭘 할지 추론</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Action</span>도구 호출</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Observation</span>결과 관찰</div>
+        </div>
+        <div class="loop-note">↺ 목표를 달성하거나 최대 스텝에 도달할 때까지, 매번 LLM을 새로 호출하며 반복</div>
+      </div>
+
+      <p>이후 모든 변형이 비교 기준으로 삼는 원형이다. 매 스텝의 관찰 결과가 즉시 다음 추론에 반영되므로
+        예상 밖 상황에 유연하게 대응하고, 실제 도구 결과에 근거를 두어 환각을 줄인다. 다만 그 대가로 스텝 수만큼
+        LLM 호출이 늘어나고, 각 호출은 이전 대화 전체를 다시 읽어야 하므로 컨텍스트가 길어질수록 비용도 함께 커진다.</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">LLM 호출 패턴</p><p class="value">스텝당 1회, N회</p></div>
+        <div class="stat"><p class="label">계획 시점</p><p class="value">즉흥적 · 매 스텝</p></div>
+        <div class="stat"><p class="label">중간 적응력</p><p class="value">매우 높음</p></div>
+        <div class="stat"><p class="label">대표 사용처</p><p class="value">탐색적 리서치, 상담</p></div>
+      </div>
+    </section>
+
+    <!-- Plan-and-Execute -->
+    <section class="pattern" data-pattern="plan" id="plan">
+      <p class="eyebrow">사전 계획 후 실행</p>
+      <h2>Plan-and-Execute</h2>
+      <p class="origin">계획 수립과 실행을 분리하는 아키텍처 · LangChain 등 다수 프레임워크가 채택한 패턴</p>
+
+      <div class="diagram">
+        <div class="flow">
+          <div class="node"><span class="tag">Planner</span>전체 계획을 한 번에 수립</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Step 1</span>실행</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Step 2</span>실행</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Step N</span>실행</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Answer</span>최종 답 반환</div>
+        </div>
+        <div class="loop-note">↺ 결과가 계획과 어긋나면 Replanner가 남은 단계를 다시 세운다</div>
+      </div>
+
+      <p>강력한(비싼) 모델이 목표를 보고 순서가 있는 단계 목록을 <strong>한 번에</strong> 만들고, 이후 각 단계는
+        더 가볍고 저렴한 모델이나 실행기가 순서대로 수행한다. ReAct가 매 스텝 "다음엔 뭘 하지"를 다시 고민하는 것과
+        달리, Plan-and-Execute는 전체 목표를 먼저 조망한 뒤 실행에 들어가므로 단계 누락이 적고 계획 자체를 사람이
+        검토·승인하기도 쉽다. 실행 중 예상과 다른 결과가 나오면 별도의 <em>Replanner</em>가 남은 계획만 다시 세우는
+        형태로 최소한의 적응력을 확보하는 구현이 일반적이다.</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">LLM 호출 패턴</p><p class="value">계획 1회 + 단계별</p></div>
+        <div class="stat"><p class="label">계획 시점</p><p class="value">사전에 전체 수립</p></div>
+        <div class="stat"><p class="label">중간 적응력</p><p class="value">중간 (재계획 시)</p></div>
+        <div class="stat"><p class="label">대표 사용처</p><p class="value">보험 청구, 정형 보고서</p></div>
+      </div>
+
+      <div class="split">
+        <div class="box good">
+          <h4>장점</h4>
+          <ul>
+            <li>전체 목표를 먼저 조망해 단계 누락과 방향 이탈을 줄인다.</li>
+            <li>계획(비싼 모델)과 실행(저렴한 모델)을 분리해 비용을 낮출 수 있다.</li>
+            <li>계획이 사람이 읽을 수 있는 형태로 나오므로 실행 전 검토·승인이 쉽다.</li>
+          </ul>
+        </div>
+        <div class="box warn">
+          <h4>한계</h4>
+          <ul>
+            <li>예상 밖 상황에는 경직적이다 — 플래너가 미리 상정하지 못한 변수에 약하다.</li>
+            <li>재계획 로직이 없으면 한 단계의 실패가 그대로 전체 실패로 이어진다.</li>
+            <li>플래너·실행자·(선택적) 리플래너로 아키텍처 복잡도가 ReAct보다 높다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ReWOO -->
+    <section class="pattern" data-pattern="rewoo" id="rewoo">
+      <p class="eyebrow">추론과 관찰의 분리 (토큰 비용 절감)</p>
+      <h2>ReWOO — Reasoning WithOut Observation</h2>
+      <p class="origin">Xu, Zhao et al., 2023 · <a href="https://arxiv.org/abs/2305.18323" target="_blank" rel="noopener">"ReWOO: Decoupling Reasoning from Observations for Efficient Augmented Language Models"</a></p>
+
+      <div class="diagram">
+        <div class="flow">
+          <div class="node"><span class="tag">Planner</span>변수(#E1,#E2…)를 포함한 전체 계획을 1회 생성</div>
+          <div class="arrow"></div>
+          <div class="stack">
+            <div class="node" style="max-width:120px">Worker → #E1</div>
+            <div class="node" style="max-width:120px">Worker → #E2</div>
+            <div class="node" style="max-width:120px">Worker → #E3</div>
+          </div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Solver</span>계획+증거를 종합해 답 생성</div>
+        </div>
+        <div class="loop-note">Worker는 LLM 호출 없이 병렬로 도구만 실행 — 전체 LLM 호출은 단 2회</div>
+      </div>
+
+      <p>ReAct는 도구 실행 결과(Observation)를 매번 LLM 컨텍스트에 다시 넣기 때문에 프롬프트가 스텝마다 길어진다.
+        ReWOO는 이 관찰 값을 <strong>#E1, #E2</strong> 같은 변수 자리표시자로 남겨두고, Planner가 필요한 추론과
+        도구 호출 계획 전체를 <strong>한 번의 LLM 호출</strong>로 미리 완성한다. Worker들은 이 계획에 따라 LLM 없이
+        도구만 실행해 변수 값을 채우며, 서로 의존하지 않는 호출은 병렬로 처리할 수 있다. 마지막으로 Solver가 원래
+        계획과 채워진 증거를 한 번에 읽고 최종 답을 합성한다. 저자들은 멀티홉 QA 벤치마크에서 ReAct 대비
+        <strong>약 5배의 토큰 효율</strong>을 보고했다.</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">LLM 호출 패턴</p><p class="value">고정 2회</p></div>
+        <div class="stat"><p class="label">계획 시점</p><p class="value">사전 1회, 변수로 위임</p></div>
+        <div class="stat"><p class="label">중간 적응력</p><p class="value">낮음 (계획 고정)</p></div>
+        <div class="stat"><p class="label">대표 사용처</p><p class="value">멀티홉 QA, 병렬 조회</p></div>
+      </div>
+
+      <div class="split">
+        <div class="box good">
+          <h4>장점</h4>
+          <ul>
+            <li>LLM 호출이 2회로 고정되어 네 패턴 중 토큰·비용 효율이 가장 높다.</li>
+            <li>독립적인 도구 호출을 병렬 실행해 지연시간을 줄인다.</li>
+            <li>Worker 하나가 실패해도 전체 파이프라인이 즉시 멈추지 않는다.</li>
+          </ul>
+        </div>
+        <div class="box warn">
+          <h4>한계</h4>
+          <ul>
+            <li>실행 중 적응이 전혀 없다 — 계획은 첫 LLM 호출 이후 고정된다.</li>
+            <li>변수 간 의존 관계가 예상과 다르게 흘러가면 체인이 그대로 깨진다.</li>
+            <li>결과를 어느 정도 예측할 수 있는 정형화된 과제에 적합하고, 탐색적 과제엔 약하다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reflexion -->
+    <section class="pattern" data-pattern="reflexion" id="reflexion">
+      <p class="eyebrow">실패 후 자기 비평을 메모리에 저장</p>
+      <h2>Reflexion — 말로 하는 강화학습</h2>
+      <p class="origin">Shinn et al., 2023 (NeurIPS) · <a href="https://arxiv.org/abs/2303.11366" target="_blank" rel="noopener">"Reflexion: Language Agents with Verbal Reinforcement Learning"</a></p>
+
+      <div class="diagram">
+        <div class="flow">
+          <div class="node"><span class="tag">Actor</span>과제 시도</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Evaluator</span>결과 채점</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Self-Reflection</span>실패 원인을 언어로 서술</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Memory</span>반성문 저장</div>
+        </div>
+        <div class="loop-note">↺ 다음 시도의 Actor는 저장된 반성문을 함께 참고 — 성공하거나 최대 시도 횟수까지 반복</div>
+      </div>
+
+      <p>가중치를 업데이트하는 대신, 시도 결과에 대한 <strong>언어적 피드백</strong>을 에피소드 메모리에 쌓아 다음
+        시도의 컨텍스트로 활용한다는 점이 핵심이다. Actor가 과제를 시도하면(ReAct 등 다른 패턴을 그대로 써도 된다)
+        Evaluator가 성공·실패를 판정하고, 실패 시 Self-Reflection 모듈이 "왜 실패했는지"를 자연어 문장으로 남긴다.
+        이 반성문이 메모리 버퍼에 쌓이고, 다음 시도에서 Actor는 같은 실수를 반복하지 않도록 이 메모리를 함께
+        참고한다. 단위 테스트 통과 여부처럼 채점 기준이 명확한 과제에서 특히 효과가 크며, 논문은 HumanEval에서
+        <strong>pass@1 91%</strong>를 보고했다(같은 논문 기준 GPT-4 단독 80% 대비).</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">LLM 호출 패턴</p><p class="value">시도 횟수에 비례</p></div>
+        <div class="stat"><p class="label">계획 시점</p><p class="value">시도마다 갱신</p></div>
+        <div class="stat"><p class="label">중간 적응력</p><p class="value">세션 내 유일한 "학습"</p></div>
+        <div class="stat"><p class="label">대표 사용처</p><p class="value">테스트 있는 코드 생성</p></div>
+      </div>
+
+      <div class="split">
+        <div class="box good">
+          <h4>장점</h4>
+          <ul>
+            <li>ReAct·Plan-and-Execute 등 다른 패턴 위에 얹는 오버레이 방식으로 결합할 수 있다.</li>
+            <li>채점 기준이 명확한 과제(테스트, 정답 일치)에서 성능 향상 폭이 크다.</li>
+            <li>실패 이유가 사람이 읽을 수 있는 자연어로 남아 디버깅에 유용하다.</li>
+          </ul>
+        </div>
+        <div class="box warn">
+          <h4>한계</h4>
+          <ul>
+            <li>재시도할 때마다 LLM 호출과 비용이 그대로 배로 늘어난다.</li>
+            <li>자기평가 품질이 반성의 품질을 좌우한다 — 평가자가 오류를 못 짚으면 무용하다.</li>
+            <li>같은 모델이 결과와 비평을 함께 생성하면 스스로의 맹점을 강화할 수 있다는 지적도 있다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- LATS + others -->
+    <section class="pattern" data-pattern="lats" id="lats">
+      <p class="eyebrow">그 외 주목할 변형 — 탐색으로 확장</p>
+      <h2>LATS와 그 밖의 흐름</h2>
+      <p class="origin">Zhou et al., 2023–2024 (ICML) · <a href="https://arxiv.org/abs/2310.04406" target="_blank" rel="noopener">"Language Agent Tree Search Unifies Reasoning, Acting, and Planning"</a></p>
+
+      <div class="diagram">
+        <div class="tree">
+          <div class="node root"><span class="tag">State</span>현재까지의 궤적</div>
+          <div class="branch-line"></div>
+          <div class="children">
+            <div class="node">후보 행동 A</div>
+            <div class="node">후보 행동 B</div>
+            <div class="node">후보 행동 C</div>
+          </div>
+        </div>
+        <div class="loop-note">선택(UCT) → 확장 → 평가 → 시뮬레이션 → 역전파 → 반성, 6단계를 반복하며 트리를 키운다</div>
+      </div>
+
+      <p><strong>LATS</strong>(Language Agent Tree Search)는 ReAct가 하나의 궤적만 따라가다 한번 잘못 들어서면
+        되돌아오지 못한다는 한계를, 몬테카를로 트리 탐색(MCTS)으로 보완한다. 매 단계에서 여러 행동 후보를 샘플링해
+        트리를 확장하고, 언어 모델의 평가 점수와 자기일관성(self-consistency)을 함께 반영한 값 함수로 유망한 경로를
+        고르며, 실패한 경로에서는 Reflexion처럼 언어적 반성을 남겨 이후 탐색에 활용한다. 논문은 HotPotQA에서 ReAct
+        대비 약 2배의 정확도(0.63 vs 0.32), HumanEval에서 GPT-4 기준 pass@1 92.7%를 보고했다 — 다만 여러 후보
+        경로를 탐색하는 만큼 LLM 호출과 비용도 함께 크게 늘어난다.</p>
+
+      <div class="note">
+        <strong>더 살펴볼 만한 갈래.</strong> ADaPT(As-Needed Decomposition and Planning)는 실행 중 난이도를
+        판단해 필요한 하위 과제만 그때그때 더 쪼개는 "필요 시 분해" 접근을, Self-Ask는 복잡한 질문을 스스로
+        후속 질문으로 나눠가며 답하는 프롬프팅 패턴을 제안한다. 두 흐름 모두 "계획을 언제, 얼마나 세밀하게
+        세울 것인가"라는 같은 질문에 대한 또 다른 답이다.
+      </div>
+    </section>
+
+    <!-- comparison table -->
+    <section id="compare">
+      <p class="eyebrow">한눈에 비교</p>
+      <h2>다섯 패턴 비교표</h2>
+      <p class="muted" style="margin-bottom:24px;">같은 기준으로 나란히 놓고 보면 각 패턴이 ReAct의 어떤 한계를
+        겨냥했는지가 드러난다.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th class="h-react">ReAct</th>
+              <th class="h-plan">Plan-and-Execute</th>
+              <th class="h-rewoo">ReWOO</th>
+              <th class="h-reflexion">Reflexion</th>
+              <th class="h-lats">LATS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">계획 시점</th>
+              <td>매 스텝 즉흥</td>
+              <td>사전 1회 전체</td>
+              <td>사전 1회 + 변수</td>
+              <td>시도마다 갱신</td>
+              <td>탐색하며 확장</td>
+            </tr>
+            <tr>
+              <th scope="row">LLM 호출 수</th>
+              <td>스텝 수만큼</td>
+              <td>계획 1 + 단계별</td>
+              <td>고정 2회</td>
+              <td>시도 횟수에 비례</td>
+              <td>탐색 폭만큼 (많음)</td>
+            </tr>
+            <tr>
+              <th scope="row">실행 중 재계획</th>
+              <td>매 스텝 (본질적)</td>
+              <td>Replanner 있을 때만</td>
+              <td>없음</td>
+              <td>다음 시도에 반영</td>
+              <td>탐색 중 지속 반영</td>
+            </tr>
+            <tr>
+              <th scope="row">병렬 처리</th>
+              <td>불가</td>
+              <td>제한적</td>
+              <td>Worker 병렬 가능</td>
+              <td>불가</td>
+              <td>후보 branch 병렬 가능</td>
+            </tr>
+            <tr>
+              <th scope="row">토큰 효율</th>
+              <td>기준선</td>
+              <td>ReAct보다 높음</td>
+              <td>가장 높음 (~5배)</td>
+              <td>재시도만큼 낮아짐</td>
+              <td>가장 낮음 (탐색 비용)</td>
+            </tr>
+            <tr>
+              <th scope="row">실패 대응</th>
+              <td>다음 스텝에서 즉시 반응</td>
+              <td>재계획 또는 그대로 실패</td>
+              <td>격리(다른 Worker는 계속)</td>
+              <td>반성문으로 재시도</td>
+              <td>다른 branch로 회귀</td>
+            </tr>
+            <tr>
+              <th scope="row">대표 사용처</th>
+              <td>탐색적 리서치, 상담</td>
+              <td>정형 업무 파이프라인</td>
+              <td>멀티홉 QA, 병렬 조회</td>
+              <td>테스트 있는 코드 생성</td>
+              <td>정확도가 최우선인 과제</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- guide -->
+    <section id="guide" style="padding-bottom:20px;">
+      <p class="eyebrow">선택 가이드</p>
+      <h2>어떤 상황에 어떤 패턴을</h2>
+      <div class="guide-grid">
+        <div class="guide-card" style="--dot:var(--react)">
+          <p class="k">매 순간 새로운 정보가 필요하다면</p>
+          <p>단계마다 관찰 결과가 다음 판단을 바꾸는 탐색적 과제에는 여전히 ReAct가 기본값이다.</p>
+        </div>
+        <div class="guide-card" style="--dot:var(--plan)">
+          <p class="k">과정이 반복되고 사람이 검토해야 한다면</p>
+          <p>절차가 어느 정도 정해져 있고 실행 전 계획을 승인받아야 한다면 Plan-and-Execute가 맞다.</p>
+        </div>
+        <div class="guide-card" style="--dot:var(--rewoo)">
+          <p class="k">토큰 비용이 가장 큰 제약이라면</p>
+          <p>독립적인 조회를 병렬로 처리할 수 있는 정형 과제라면 ReWOO로 호출 수를 2회까지 줄인다.</p>
+        </div>
+        <div class="guide-card" style="--dot:var(--reflexion)">
+          <p class="k">채점 기준이 명확한 반복 개선 과제라면</p>
+          <p>테스트·정답 일치처럼 성공을 자동으로 판별할 수 있다면 Reflexion을 다른 패턴 위에 얹는다.</p>
+        </div>
+        <div class="guide-card" style="--dot:var(--lats)">
+          <p class="k">정확도가 최우선이고 비용에 여유가 있다면</p>
+          <p>되돌아갈 수 있는 탐색이 필요한 고난도 과제라면 LATS처럼 트리 탐색을 곁들인다.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p class="src-title">참고 자료</p>
+      <ul>
+        <li><a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">Yao et al., "ReAct: Synergizing Reasoning and Acting in Language Models" (arXiv:2210.03629)</a></li>
+        <li><a href="https://arxiv.org/abs/2305.18323" target="_blank" rel="noopener">Xu, Zhao et al., "ReWOO: Decoupling Reasoning from Observations for Efficient Augmented Language Models" (arXiv:2305.18323)</a></li>
+        <li><a href="https://arxiv.org/abs/2303.11366" target="_blank" rel="noopener">Shinn et al., "Reflexion: Language Agents with Verbal Reinforcement Learning" (arXiv:2303.11366)</a></li>
+        <li><a href="https://arxiv.org/abs/2310.04406" target="_blank" rel="noopener">Zhou et al., "Language Agent Tree Search Unifies Reasoning, Acting, and Planning in Language Models" (arXiv:2310.04406)</a></li>
+        <li><a href="https://www.langchain.com/blog/planning-agents" target="_blank" rel="noopener">LangChain Blog, "Plan-and-Execute Agents"</a></li>
+      </ul>
+    </footer>
+  </main>
+</div>
