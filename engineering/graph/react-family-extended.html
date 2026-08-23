@@ -1,0 +1,541 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReAct 확장편</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F5F6F9;
+    --surface:#FFFFFF;
+    --surface-2:#EDEFF4;
+    --ink:#1B2030;
+    --ink-muted:#626B7A;
+    --line:#DBDFE6;
+    --accent:#3D4C8C;
+    --accent-soft:#E7E9F6;
+    --selfask:#9C7A1E;
+    --adapt:#1B7F91;
+    --codeact:#A63C82;
+    --tot:#3C7A3E;
+    --got:#5B5FC7;
+    --voyager:#B85C2E;
+    --good:#1E8A72;
+    --warn:#B8622A;
+    --shadow: 0 1px 2px rgba(27,32,48,0.04), 0 8px 24px -12px rgba(27,32,48,0.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12151D; --surface:#191D28; --surface-2:#212635;
+      --ink:#E7E9F0; --ink-muted:#9AA2B4; --line:#2C3242;
+      --accent:#95A3F2; --accent-soft:#232A4A;
+      --selfask:#D9B54A; --adapt:#4FC9DE; --codeact:#E883C4;
+      --tot:#7FCB82; --got:#A5A8F2; --voyager:#E89A63;
+      --good:#45CBA6; --warn:#E4934F;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12151D; --surface:#191D28; --surface-2:#212635;
+    --ink:#E7E9F0; --ink-muted:#9AA2B4; --line:#2C3242;
+    --accent:#95A3F2; --accent-soft:#232A4A;
+    --selfask:#D9B54A; --adapt:#4FC9DE; --codeact:#E883C4;
+    --tot:#7FCB82; --got:#A5A8F2; --voyager:#E89A63;
+    --good:#45CBA6; --warn:#E4934F;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans KR","Noto Sans KR",-apple-system,sans-serif;
+    line-height:1.6;
+  }
+  ::selection{ background:var(--accent-soft); color:var(--ink); }
+  a{ color:var(--accent); }
+  a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+
+  .shell{
+    max-width:1180px; margin:0 auto; padding:0 24px;
+    display:grid; grid-template-columns:220px minmax(0,1fr); gap:56px;
+  }
+  @media (max-width:920px){ .shell{ grid-template-columns:1fr; } }
+
+  .spine{
+    position:sticky; top:28px; align-self:start; padding-top:120px;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  @media (max-width:920px){
+    .spine{ position:static; padding-top:0; flex-direction:row; overflow-x:auto;
+      gap:6px; padding-bottom:8px; margin-top:24px; border-bottom:1px solid var(--line); }
+  }
+  .spine a{
+    display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px;
+    text-decoration:none; color:var(--ink-muted); font-size:0.85rem; white-space:nowrap;
+    transition:background .15s, color .15s;
+  }
+  .spine a:hover{ background:var(--surface-2); color:var(--ink); }
+  .spine .dot{ width:8px; height:8px; border-radius:50%; background:var(--dot,var(--accent)); flex:none; }
+
+  header.hero{ padding:64px 0 40px; border-bottom:1px solid var(--line); }
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace; font-size:0.72rem; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--accent); font-weight:600; margin:0 0 14px;
+  }
+  h1{
+    font-family:"IBM Plex Sans KR",sans-serif; font-weight:700;
+    font-size:clamp(1.6rem,3vw,2.3rem); line-height:1.3; letter-spacing:-0.01em;
+    margin:0 0 18px; text-wrap:balance; max-width:20ch;
+  }
+  .lede{ font-family:"Noto Serif KR",serif; font-size:1.03rem; color:var(--ink-muted); max-width:64ch; margin:0 0 20px; }
+  .lede strong{ color:var(--ink); font-weight:600; }
+  .back-link{ font-family:"IBM Plex Mono",monospace; font-size:0.78rem; color:var(--ink-muted); }
+
+  main{ padding-bottom:100px; min-width:0; }
+  section{ padding:52px 0; border-bottom:1px solid var(--line); scroll-margin-top:28px; }
+  section:last-of-type{ border-bottom:none; }
+
+  h2{ font-family:"IBM Plex Sans KR",sans-serif; font-weight:700; font-size:1.42rem; margin:0 0 6px; letter-spacing:-0.005em; }
+  .origin{ font-family:"IBM Plex Mono",monospace; font-size:0.8rem; color:var(--ink-muted); margin:0 0 26px; }
+  .origin a{ color:var(--ink-muted); text-decoration-color:var(--line); }
+  .origin a:hover{ color:var(--accent); }
+
+  h3{ font-family:"IBM Plex Sans KR",sans-serif; font-weight:600; font-size:0.98rem; margin:30px 0 12px; color:var(--ink); }
+  p{ font-family:"Noto Serif KR",serif; font-size:0.97rem; max-width:66ch; margin:0 0 14px; color:var(--ink); }
+  p.muted{ color:var(--ink-muted); }
+
+  .pattern{ --accent-local:var(--accent); }
+  .pattern[data-pattern="selfask"]{ --accent-local:var(--selfask); }
+  .pattern[data-pattern="adapt"]{ --accent-local:var(--adapt); }
+  .pattern[data-pattern="codeact"]{ --accent-local:var(--codeact); }
+  .pattern[data-pattern="tot"]{ --accent-local:var(--tot); }
+  .pattern[data-pattern="got"]{ --accent-local:var(--got); }
+  .pattern[data-pattern="voyager"]{ --accent-local:var(--voyager); }
+  .pattern .eyebrow{ color:var(--accent-local); }
+  .pattern .origin{ border-left:2px solid var(--accent-local); padding-left:10px; }
+
+  .diagram{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:24px 22px; box-shadow:var(--shadow); margin:8px 0 26px; overflow-x:auto;
+  }
+  .flow{ display:flex; align-items:center; gap:0; min-width:max-content; }
+  .flow.wrap{ flex-wrap:wrap; row-gap:14px; }
+  .node{
+    font-family:"IBM Plex Mono",monospace; font-size:0.78rem; font-weight:500; color:var(--ink);
+    background:var(--bg); border:1.5px solid var(--accent-local); border-radius:9px;
+    padding:10px 13px; text-align:center; line-height:1.35; max-width:155px;
+  }
+  .node .tag{
+    display:block; font-family:"IBM Plex Sans KR",sans-serif; font-size:0.66rem;
+    color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px;
+  }
+  .arrow{
+    flex:none; width:26px; height:1.5px; background:var(--accent-local);
+    position:relative; margin:0 4px; opacity:0.65;
+  }
+  .arrow::after{
+    content:""; position:absolute; right:0; top:50%; width:6px; height:6px;
+    border-right:1.5px solid var(--accent-local); border-bottom:1.5px solid var(--accent-local);
+    transform:translate(-2px,-50%) rotate(-45deg);
+  }
+  .arrow.down{ width:1.5px; height:22px; margin:6px auto; }
+  .arrow.down::after{ right:50%; top:100%; transform:translate(3px,-8px) rotate(45deg); }
+  .branch{ display:flex; flex-direction:column; align-items:center; gap:0; }
+  .branch .kids{ display:flex; gap:14px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
+  .loop-note{
+    display:inline-flex; align-items:center; gap:6px; font-family:"IBM Plex Mono",monospace;
+    font-size:0.74rem; color:var(--accent-local); margin-top:14px; background:var(--accent-soft);
+    padding:6px 12px; border-radius:20px;
+  }
+
+  .stats{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1px;
+    background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:10px 0 26px;
+  }
+  .stat{ background:var(--surface); padding:15px 16px; }
+  .stat .label{ font-family:"IBM Plex Sans KR",sans-serif; font-size:0.68rem; color:var(--ink-muted);
+    text-transform:uppercase; letter-spacing:0.04em; margin:0 0 6px; }
+  .stat .value{ font-family:"IBM Plex Mono",monospace; font-size:0.88rem; font-weight:600; color:var(--ink); }
+
+  .note{
+    background:var(--accent-soft); border-left:3px solid var(--accent-local,var(--accent));
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:20px 0;
+    font-family:"Noto Serif KR",serif; font-size:0.92rem; color:var(--ink);
+  }
+  .note strong{ font-family:"IBM Plex Sans KR",sans-serif; }
+
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  table{ border-collapse:collapse; width:100%; min-width:860px; font-size:0.84rem; }
+  thead th{
+    font-family:"IBM Plex Sans KR",sans-serif; font-weight:600; text-align:left; padding:13px 15px;
+    background:var(--surface-2); color:var(--ink); border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  thead th:first-child{ color:var(--ink-muted); font-weight:500; }
+  thead th.h-selfask{ color:var(--selfask); }
+  thead th.h-adapt{ color:var(--adapt); }
+  thead th.h-codeact{ color:var(--codeact); }
+  thead th.h-tot{ color:var(--tot); }
+  thead th.h-got{ color:var(--got); }
+  thead th.h-voyager{ color:var(--voyager); }
+  tbody th{ text-align:left; font-family:"IBM Plex Sans KR",sans-serif; font-weight:500; font-size:0.82rem;
+    color:var(--ink-muted); padding:12px 15px; white-space:nowrap; }
+  tbody td{ font-family:"Noto Serif KR",serif; padding:12px 15px; color:var(--ink); border-top:1px solid var(--line); vertical-align:top; }
+
+  /* trend cards */
+  .trend-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-top:22px; }
+  .trend-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .trend-card .idx{
+    font-family:"IBM Plex Mono",monospace; font-size:0.7rem; color:var(--accent);
+    text-transform:uppercase; letter-spacing:0.06em;
+  }
+  .trend-card h4{ font-family:"IBM Plex Sans KR",sans-serif; font-size:0.98rem; font-weight:600; margin:0; color:var(--ink); }
+  .trend-card p{ font-size:0.88rem; margin:0; color:var(--ink-muted); }
+
+  footer{ padding:36px 0 60px; font-family:"IBM Plex Mono",monospace; font-size:0.78rem; color:var(--ink-muted); }
+  footer .src-title{ font-family:"IBM Plex Sans KR",sans-serif; font-size:0.85rem; color:var(--ink); font-weight:600; margin:0 0 12px; }
+  footer ul{ margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:6px; }
+  footer a{ color:var(--ink-muted); }
+  footer a:hover{ color:var(--accent); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+
+<div class="shell">
+  <nav class="spine" aria-label="섹션 이동">
+    <a href="#intro" style="--dot:var(--accent)"><span class="dot"></span>시작하며</a>
+    <a href="#selfask" style="--dot:var(--selfask)"><span class="dot"></span>Self-Ask</a>
+    <a href="#adapt" style="--dot:var(--adapt)"><span class="dot"></span>ADaPT</a>
+    <a href="#codeact" style="--dot:var(--codeact)"><span class="dot"></span>CodeAct</a>
+    <a href="#tot-got" style="--dot:var(--tot)"><span class="dot"></span>ToT · GoT</a>
+    <a href="#voyager" style="--dot:var(--voyager)"><span class="dot"></span>Voyager</a>
+    <a href="#compare" style="--dot:var(--accent)"><span class="dot"></span>비교표</a>
+    <a href="#trends" style="--dot:var(--accent)"><span class="dot"></span>2025–26 동향</a>
+  </nav>
+
+  <main>
+    <header class="hero" id="intro">
+      <p class="eyebrow">AGENT REASONING PATTERNS · PART 2</p>
+      <h1>분해, 코드, 탐색 — ReAct 밖으로 더 뻗어나간 갈래들</h1>
+      <p class="lede">
+        앞선 문서(ReAct 패밀리)가 <strong>Plan-and-Execute, ReWOO, Reflexion, LATS</strong>처럼 "계획을 언제
+        세우는가"에 집중했다면, 이 문서는 그와는 다른 세 축을 겨냥한 변형들을 정리한다. 언제 문제를 <strong>쪼갤지</strong>
+        (Self-Ask, ADaPT), 행동을 <strong>어떤 형식으로 표현할지</strong>(CodeAct), 궤적을 <strong>얼마나 넓게
+        탐색할지</strong>(Tree/Graph of Thoughts)와, 지식을 <strong>어떻게 축적할지</strong>(Voyager)다. 마지막
+        절에서는 이 갈래들이 2025–2026년 실제 프로덕션 에이전트에 어떻게 녹아들었는지 최신 동향을 짚는다.
+      </p>
+      <p class="back-link">← 기본 다섯 패턴(ReAct · Plan-and-Execute · ReWOO · Reflexion · LATS)은 별도 문서 「ReAct 패밀리」 참고</p>
+    </header>
+
+    <!-- Self-Ask -->
+    <section class="pattern" data-pattern="selfask" id="selfask">
+      <p class="eyebrow">질문을 스스로 쪼개기 · 2022</p>
+      <h2>Self-Ask</h2>
+      <p class="origin">Press et al., 2022 · <a href="https://arxiv.org/abs/2210.03350" target="_blank" rel="noopener">"Measuring and Narrowing the Compositionality Gap in Language Models"</a></p>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">Question</span>원래 질문</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Follow-up?</span>후속 질문이 필요한가</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Follow-up</span>스스로 후속 질문 생성 → 답변</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Final Answer</span>후속 답들을 종합</div>
+        </div>
+        <div class="loop-note">↺ "Follow-up 필요 없음"이 나올 때까지 후속 질문 → 답변을 반복</div>
+      </div>
+
+      <p>저자들은 모델이 단일 사실 질문(single-hop)은 잘 맞히면서도, 그 사실들을 엮어야 하는 다중 홉(multi-hop)
+        질문에는 약하다는 <strong>구성성 격차(compositionality gap)</strong>를 지적한다 — 모델이 커질수록 단일
+        질문 성능은 빠르게 좋아지지만 다중 홉 성능은 그만큼 따라오지 못한다는 것이다. Self-Ask는 Chain-of-Thought에
+        "지금 후속 질문이 필요한가?"라는 명시적 체크포인트를 끼워 넣어, 모델이 스스로 하위 질문을 만들고 답한 뒤
+        최종 답을 조립하도록 강제한다. 이 구조가 정형화되어 있기 때문에 후속 질문에 대한 답을 모델 스스로 추측하는
+        대신 <strong>검색 엔진 호출로 대체</strong>하기도 쉽다 — ReAct보다 먼저 나온, "질문 분해"만으로 도구 결합의
+        길을 튼 프롬프팅 기법이다.</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">핵심 축</p><p class="value">언제 하위질문을 던질지</p></div>
+        <div class="stat"><p class="label">행동 형식</p><p class="value">프롬프팅만 (도구 선택)</p></div>
+        <div class="stat"><p class="label">ReAct와 관계</p><p class="value">선행 연구, 도구 결합 용이</p></div>
+        <div class="stat"><p class="label">대표 사용처</p><p class="value">다중 홉 QA</p></div>
+      </div>
+    </section>
+
+    <!-- ADaPT -->
+    <section class="pattern" data-pattern="adapt" id="adapt">
+      <p class="eyebrow">필요할 때만 쪼개기 · 2023</p>
+      <h2>ADaPT — As-Needed Decomposition and Planning</h2>
+      <p class="origin">Prasad, Koller et al., 2023 · <a href="https://arxiv.org/abs/2311.05772" target="_blank" rel="noopener">"ADaPT: As-Needed Decomposition and Planning with Language Models"</a> (NAACL 2024 Findings)</p>
+
+      <div class="diagram">
+        <div class="branch">
+          <div class="node"><span class="tag">Task</span>과제 실행 시도</div>
+          <div class="arrow down"></div>
+          <div class="node" style="border-style:dashed;">성공? 실행기 역량 안에 있는가</div>
+          <div class="kids">
+            <div class="node" style="max-width:120px">성공 → 종료</div>
+            <div class="node" style="max-width:130px">실패 → 하위 과제로 재귀 분해</div>
+          </div>
+        </div>
+        <div class="loop-note">↺ 각 하위 과제에도 같은 판단을 재귀적으로 적용 — 실행기가 감당할 수 있을 때까지</div>
+      </div>
+
+      <p>Plan-and-Execute는 시작 전에 전체를 한 번에 쪼개고, ReAct는 아예 쪼개지 않은 채 매 스텝을 즉흥적으로
+        결정한다. ADaPT는 그 중간을 택한다 — 우선 과제를 통째로 실행해보고, <strong>모델이 실제로 실패했을 때만</strong>
+        그 과제를 더 작은 하위 과제들로 재귀적으로 쪼갠다. 분해 여부와 깊이가 과제의 난이도, 그리고 그 순간 실행기
+        모델의 역량에 맞춰 동적으로 정해지는 셈이다. ALFWorld에서 성공률 28.3%p, WebShop에서 27%p, 저자들이 새로
+        만든 합성 과제 벤치마크 TextCraft에서 33%p의 향상을 보고했으며, 특히 여러 단계를 거치는 다층 분해가
+        성능에 결정적이었다고 밝힌다.</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">핵심 축</p><p class="value">언제/얼마나 쪼갤지</p></div>
+        <div class="stat"><p class="label">분해 시점</p><p class="value">실패 시에만, 재귀적</p></div>
+        <div class="stat"><p class="label">Plan-and-Execute와 차이</p><p class="value">사전 전체분해 아님</p></div>
+        <div class="stat"><p class="label">대표 결과</p><p class="value">ALFWorld +28.3%p</p></div>
+      </div>
+    </section>
+
+    <!-- CodeAct -->
+    <section class="pattern" data-pattern="codeact" id="codeact">
+      <p class="eyebrow">행동 자체를 코드로 · 2024</p>
+      <h2>CodeAct</h2>
+      <p class="origin">Wang et al., 2024 (ICML) · <a href="https://arxiv.org/abs/2402.01030" target="_blank" rel="noopener">"Executable Code Actions Elicit Better LLM Agents"</a></p>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">Thought</span>다음 행동 추론</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Action = Code</span>파이썬 코드로 행동 작성</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Interpreter</span>코드 실행 (반복문·조건문·도구 조합 가능)</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Observation</span>실행 결과 관찰</div>
+        </div>
+        <div class="loop-note">↺ ReAct와 같은 루프지만, Action 슬롯이 JSON/텍스트가 아니라 실행 가능한 코드</div>
+      </div>
+
+      <p>ReAct·Plan-and-Execute·ReWOO 모두 "행동을 어떻게 표현할지"는 대개 정해진 JSON이나 자연어 형식에 맡겨
+        왔다. CodeAct는 이 형식 자체를 <strong>실행 가능한 파이썬 코드</strong>로 통일하자고 제안한다 — 미리
+        정의된 액션 목록에 갇히지 않고, 반복문·조건문으로 여러 도구를 자유롭게 조합하거나 새 관찰에 따라 이전
+        행동을 그 자리에서 수정할 수 있다. 17개 모델을 API-Bank 등에서 평가해 기존 형식 대비 최대 20%p 높은
+        성공률을 보였고, 저자들은 이 방식으로 학습한 CodeActInstruct 데이터셋과 Llama2/Mistral 기반의
+        CodeActAgent도 함께 공개했다.</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">핵심 축</p><p class="value">행동을 어떻게 표현할지</p></div>
+        <div class="stat"><p class="label">행동 형식</p><p class="value">JSON/텍스트 → 실행 코드</p></div>
+        <div class="stat"><p class="label">ReAct와 관계</p><p class="value">같은 루프, Action 슬롯만 교체</p></div>
+        <div class="stat"><p class="label">대표 결과</p><p class="value">성공률 최대 +20%p</p></div>
+      </div>
+    </section>
+
+    <!-- ToT / GoT -->
+    <section class="pattern" data-pattern="tot" id="tot-got">
+      <p class="eyebrow">궤적을 넓게 탐색하기 · 2023</p>
+      <h2>Tree of Thoughts · Graph of Thoughts</h2>
+      <p class="origin">Yao et al., 2023 · <a href="https://arxiv.org/abs/2305.10601" target="_blank" rel="noopener">"Tree of Thoughts: Deliberate Problem Solving with Large Language Models"</a> / Besta et al., 2023 · "Graph of Thoughts"</p>
+
+      <div class="diagram">
+        <div class="branch">
+          <div class="node"><span class="tag">Thought 0</span>부분 풀이 상태</div>
+          <div class="arrow down"></div>
+          <div class="kids">
+            <div class="node" style="max-width:110px">후보 사고 A</div>
+            <div class="node" style="max-width:110px">후보 사고 B</div>
+            <div class="node" style="max-width:110px">후보 사고 C</div>
+          </div>
+        </div>
+        <div class="loop-note">각 후보를 모델 스스로 평가(voting/scoring) → 유망한 가지만 BFS/DFS로 확장, GoT는 가지 간 병합도 허용</div>
+      </div>
+
+      <p>LATS가 몬테카를로 트리 탐색을 <em>도구를 쓰는 에이전트</em>에 적용한 것이라면, 그 개념적 뿌리는 순수
+        추론 과제(퍼즐, 수학, 창작 글쓰기)에 트리 탐색을 적용한 <strong>Tree of Thoughts</strong>다. ReAct의 단일
+        직선 궤적과 달리, 매 단계에서 여러 "사고(thought)" 후보를 생성하고 모델 스스로 각 후보의 유망함을
+        평가한 뒤 너비/깊이 우선 탐색으로 가지를 넓혀간다. <strong>Graph of Thoughts</strong>는 이 구조를 트리에서
+        임의의 그래프로 일반화해, 서로 다른 가지에서 나온 여러 사고를 하나로 <em>병합</em>하거나 다시 피드백
+        루프에 넣는 것까지 허용한다 — "생각을 한 방향으로만 뻗을 필요는 없다"는 관점의 확장이다.</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">핵심 축</p><p class="value">얼마나 넓게 탐색할지</p></div>
+        <div class="stat"><p class="label">구조</p><p class="value">트리(ToT) → 그래프(GoT)</p></div>
+        <div class="stat"><p class="label">LATS와 차이</p><p class="value">도구 없는 순수 추론 중심</p></div>
+        <div class="stat"><p class="label">대표 사용처</p><p class="value">퍼즐, 창작, 수학 추론</p></div>
+      </div>
+    </section>
+
+    <!-- Voyager -->
+    <section class="pattern" data-pattern="voyager" id="voyager">
+      <p class="eyebrow">기술을 축적하는 평생학습 에이전트 · 2023</p>
+      <h2>Voyager</h2>
+      <p class="origin">Wang et al., 2023 · <a href="https://arxiv.org/abs/2305.16291" target="_blank" rel="noopener">"Voyager: An Open-Ended Embodied Agent with Large Language Models"</a></p>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">Curriculum</span>다음 목표를 자동 제안</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Code Action</span>코드로 행동 시도</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Self-Verify</span>성공 여부 스스로 검증</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">Skill Library</span>성공한 코드를 재사용 가능한 기술로 저장</div>
+        </div>
+        <div class="loop-note">↺ 저장된 기술은 다음 목표를 풀 때 그대로 불러와 조합 — 세션이 끝나도 남는 영구 메모리</div>
+      </div>
+
+      <p>Reflexion의 메모리가 "이번 시도가 왜 실패했는지"를 담는 임시 반성문이라면, Voyager의 메모리는 여기서
+        한 걸음 더 나아가 <strong>성공한 행동 자체를 영구적인 기술(skill)</strong>로 남긴다. 마인크래프트 환경에서
+        자동 커리큘럼이 다음으로 배울 만한 목표를 스스로 제안하면, 에이전트는 코드로 행동을 시도하고(CodeAct와
+        유사한 코드-행동 방식), 성공 여부를 스스로 검증한 뒤 성공한 코드를 스킬 라이브러리에 저장해 이후
+        과제에서 다시 조합해 쓴다. 외부 개입 없이 스스로 목표를 정하고 능력을 넓혀간다는 점에서, 세션 단위로
+        끝나는 다른 패턴들과 달리 <strong>평생학습(lifelong learning)</strong> 관점을 에이전트 루프 안으로
+        끌어들인 초기 사례로 꼽힌다.</p>
+
+      <div class="stats">
+        <div class="stat"><p class="label">핵심 축</p><p class="value">지식을 어떻게 축적할지</p></div>
+        <div class="stat"><p class="label">메모리</p><p class="value">영구 스킬 라이브러리</p></div>
+        <div class="stat"><p class="label">Reflexion과 차이</p><p class="value">비평문이 아닌 재사용 코드 저장</p></div>
+        <div class="stat"><p class="label">대표 사용처</p><p class="value">체화 에이전트, 개방형 탐험</p></div>
+      </div>
+    </section>
+
+    <!-- comparison -->
+    <section id="compare">
+      <p class="eyebrow">한눈에 비교</p>
+      <h2>여섯 갈래 비교표</h2>
+      <p class="muted" style="margin-bottom:22px;">앞 문서의 다섯 패턴이 "계획 시점"을 축으로 갈렸다면, 이 여섯
+        갈래는 분해·행동 표현·탐색 폭·메모리라는 서로 다른 축을 하나씩 겨냥한다.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th class="h-selfask">Self-Ask</th>
+              <th class="h-adapt">ADaPT</th>
+              <th class="h-codeact">CodeAct</th>
+              <th class="h-tot">ToT / GoT</th>
+              <th class="h-voyager">Voyager</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">겨냥한 축</th>
+              <td>분해 시점</td>
+              <td>분해 시점·깊이</td>
+              <td>행동 표현 형식</td>
+              <td>탐색 폭</td>
+              <td>지식 축적</td>
+            </tr>
+            <tr>
+              <th scope="row">핵심 아이디어</th>
+              <td>후속 질문으로 다중 홉을 명시화</td>
+              <td>실패할 때만 재귀 분해</td>
+              <td>행동을 실행 코드로 표현</td>
+              <td>사고 후보를 트리/그래프로 탐색</td>
+              <td>성공 코드를 스킬로 영구 저장</td>
+            </tr>
+            <tr>
+              <th scope="row">도구/환경 필요 여부</th>
+              <td>선택적 (검색 결합 가능)</td>
+              <td>필요 (실행기 존재 가정)</td>
+              <td>필요 (코드 인터프리터)</td>
+              <td>불필요 (순수 추론도 가능)</td>
+              <td>필요 (체화 환경)</td>
+            </tr>
+            <tr>
+              <th scope="row">메모리 성격</th>
+              <td>없음 (프롬프트 내)</td>
+              <td>없음 (분해 트리만)</td>
+              <td>없음 (기본형 기준)</td>
+              <td>탐색 트리 내 후보들</td>
+              <td>세션을 넘어서는 영구 메모리</td>
+            </tr>
+            <tr>
+              <th scope="row">대표 결과</th>
+              <td>다중 홉 QA 정확도 향상</td>
+              <td>ALFWorld +28.3%p</td>
+              <td>성공률 최대 +20%p</td>
+              <td>Game of 24 등에서 큰 향상</td>
+              <td>마인크래프트 개방형 탐험 1위</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- trends -->
+    <section id="trends" style="padding-bottom:20px;">
+      <p class="eyebrow">2025–2026 최근 동향</p>
+      <h2>이 패턴들은 지금 어떻게 조합되고 있나</h2>
+      <p class="muted" style="margin-bottom:6px;">2022–2024년의 변형들이 "어떤 패턴을 고를 것인가"의 문제였다면,
+        2025–2026년의 실제 시스템들은 이 패턴들의 아이디어를 <strong>부품처럼 조합</strong>해 하나의 스택으로
+        쌓는 쪽으로 수렴하고 있다.</p>
+
+      <div class="trend-grid">
+        <div class="trend-card">
+          <p class="idx">Test-Time Reasoning</p>
+          <h4>추론이 루프 안으로 내재화된다</h4>
+          <p>OpenAI o-시리즈, DeepSeek-R1, Claude의 확장 사고(extended thinking)처럼 모델이 답을 내기 전에
+            내부적으로 여러 차례 "숙고 토큰"을 생성한다. ReAct의 Thought 스텝이 프롬프트 바깥에서 오케스트레이션하던
+            추론을, 이제 모델 자신이 추론 시점에 직접 수행한다 — 외부 루프와 모델 내부 추론의 경계가 흐려지는 추세다.</p>
+        </div>
+        <div class="trend-card">
+          <p class="idx">Tool-Integrated RL</p>
+          <h4>도구 사용 자체를 강화학습으로 훈련</h4>
+          <p>ReTool(2025) 같은 연구는 "언제, 어떻게 도구를 부를지"를 프롬프트 설계가 아니라 강화학습으로 모델에
+            학습시켜, 추론과 코드 실행(인터프리터 호출)을 모델이 자연스럽게 번갈아 쓰도록 만든다. CodeAct가 제안한
+            "행동=코드"를 프롬프팅이 아닌 학습 단계에서 내재화한 흐름으로 볼 수 있다.</p>
+        </div>
+        <div class="trend-card">
+          <p class="idx">Process Reward</p>
+          <h4>최종 답이 아니라 중간 과정에 보상</h4>
+          <p>결과만 채점하던 Reflexion식 피드백에서 한 걸음 더 나아가, 추론 과정의 각 단계에 보상 신호를 줘
+            모델이 진행 중간에 스스로를 점검(self-check)하도록 학습시키는 접근이 확산되고 있다.</p>
+        </div>
+        <div class="trend-card">
+          <p class="idx">Protocol Standardization</p>
+          <h4>도구·에이전트 연결의 표준화</h4>
+          <p>Anthropic의 MCP(Model Context Protocol)는 에이전트와 도구·데이터 연결 방식을, Google의 A2A(Agent-to-Agent)는
+            서로 다른 플랫폼의 에이전트 간 통신 방식을 표준화한다. ReWOO의 Worker나 CodeAct의 도구 호출처럼
+            개별 패턴 안에 감춰져 있던 "도구를 어떻게 부를지"가 프레임워크 밖 공통 규격으로 분리되는 중이다.</p>
+        </div>
+        <div class="trend-card">
+          <p class="idx">Multi-Agent Orchestration</p>
+          <h4>하나의 거대한 에이전트 대신 여러 전문 에이전트</h4>
+          <p>도구 50개를 가진 에이전트 하나보다, 도구 10개씩을 가진 전문 에이전트 5개를 오케스트레이터가 조율하는
+            구조로 무게중심이 옮겨가고 있다. Plan-and-Execute의 플래너/실행자 분리가 조직 단위로 확장된 형태에 가깝다.</p>
+        </div>
+        <div class="trend-card">
+          <p class="idx">Persistent Memory</p>
+          <h4>메모리가 세션을 넘어 영구화된다</h4>
+          <p>장기 실행 에이전트는 대화 기록을 컨텍스트 창에 쌓는 대신 벡터DB나 메모리 파일로 오프로딩한다.
+            Reflexion의 에피소드 메모리, Voyager의 스킬 라이브러리가 프로토타입이던 개념이 이제 인프라 계층의
+            기본 구성요소가 되는 흐름이다.</p>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>종합하면.</strong> 2022–2024년의 변형들은 대개 "이 패턴 아니면 저 패턴" 식의 단일 선택지로
+        논문에 등장했다. 2025–2026년의 실무 스택은 오히려 이들을 재료로 삼아 — 추론 모델의 내재화된 숙고
+        + 강화학습으로 다듬은 도구 사용 + 단계별 보상 + 표준 프로토콜로 연결된 여러 전문 에이전트 + 영구
+        메모리 — 하나의 시스템 안에 겹겹이 쌓는 방향으로 수렴하고 있다.
+      </div>
+    </section>
+
+    <footer>
+      <p class="src-title">참고 자료</p>
+      <ul>
+        <li><a href="https://arxiv.org/abs/2210.03350" target="_blank" rel="noopener">Press et al., "Measuring and Narrowing the Compositionality Gap in Language Models" (arXiv:2210.03350)</a></li>
+        <li><a href="https://arxiv.org/abs/2311.05772" target="_blank" rel="noopener">Prasad et al., "ADaPT: As-Needed Decomposition and Planning with Language Models" (arXiv:2311.05772)</a></li>
+        <li><a href="https://arxiv.org/abs/2402.01030" target="_blank" rel="noopener">Wang et al., "Executable Code Actions Elicit Better LLM Agents" (arXiv:2402.01030)</a></li>
+        <li><a href="https://arxiv.org/abs/2305.10601" target="_blank" rel="noopener">Yao et al., "Tree of Thoughts: Deliberate Problem Solving with Large Language Models" (arXiv:2305.10601)</a></li>
+        <li><a href="https://arxiv.org/html/2401.14295v3" target="_blank" rel="noopener">Besta et al., "Graph of Thoughts" 관련 정리 (arXiv:2401.14295)</a></li>
+        <li><a href="https://arxiv.org/abs/2305.16291" target="_blank" rel="noopener">Wang et al., "Voyager: An Open-Ended Embodied Agent with Large Language Models" (arXiv:2305.16291)</a></li>
+        <li><a href="https://arxiv.org/abs/2504.11536" target="_blank" rel="noopener">"ReTool: Reinforcement Learning for Strategic Tool Use in LLMs" (arXiv:2504.11536)</a></li>
+        <li><a href="https://huggingface.co/blog/aufklarer/ai-trends-2026-test-time-reasoning-reflective-agen" target="_blank" rel="noopener">"AI Trends 2026: Test-Time Reasoning and the Rise of Reflective Agents" (Hugging Face Blog)</a></li>
+        <li><a href="https://machinelearningmastery.com/7-agentic-ai-trends-to-watch-in-2026/" target="_blank" rel="noopener">"7 Agentic AI Trends to Watch in 2026" (MachineLearningMastery.com)</a></li>
+        <li><a href="https://www.lyzr.ai/blog/agentic-reasoning/" target="_blank" rel="noopener">"Agentic Reasoning: How AI Agents Plan, Act, and Adapt in 2026" (Lyzr)</a></li>
+      </ul>
+    </footer>
+  </main>
+</div>
