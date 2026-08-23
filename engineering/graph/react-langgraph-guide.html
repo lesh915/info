@@ -1,0 +1,2318 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReAct 패밀리 개발 가이드</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F6F9; --surface:#FFFFFF; --surface-2:#EDEFF4;
+    --ink:#1B2030; --ink-muted:#626B7A; --line:#DBDFE6;
+    --accent:#3D4C8C; --accent-soft:#E7E9F6;
+    --react:#B8622A; --plan:#1E8A72; --rewoo:#6E56CF; --reflexion:#C43D6B; --lats:#2B7FB0;
+    --selfask:#9C7A1E; --adapt:#1B7F91; --codeact:#A63C82; --tot:#3C7A3E; --voyager:#B85C2E;
+    --good:#1E8A72; --warn:#B8622A; --bad:#C43D6B;
+    --shadow: 0 1px 2px rgba(27,32,48,0.04), 0 8px 24px -12px rgba(27,32,48,0.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12151D; --surface:#191D28; --surface-2:#212635;
+      --ink:#E7E9F0; --ink-muted:#9AA2B4; --line:#2C3242;
+      --accent:#95A3F2; --accent-soft:#232A4A;
+      --react:#E4934F; --plan:#45CBA6; --rewoo:#B0A0F7; --reflexion:#F286AC; --lats:#65B7EE;
+      --selfask:#D9B54A; --adapt:#4FC9DE; --codeact:#E883C4; --tot:#7FCB82; --voyager:#E89A63;
+      --good:#45CBA6; --warn:#E4934F; --bad:#F286AC;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12151D; --surface:#191D28; --surface-2:#212635;
+    --ink:#E7E9F0; --ink-muted:#9AA2B4; --line:#2C3242;
+    --accent:#95A3F2; --accent-soft:#232A4A;
+    --react:#E4934F; --plan:#45CBA6; --rewoo:#B0A0F7; --reflexion:#F286AC; --lats:#65B7EE;
+    --selfask:#D9B54A; --adapt:#4FC9DE; --codeact:#E883C4; --tot:#7FCB82; --voyager:#E89A63;
+    --good:#45CBA6; --warn:#E4934F; --bad:#F286AC;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans KR","Noto Sans KR",-apple-system,sans-serif; line-height:1.6; }
+  ::selection{ background:var(--accent-soft); color:var(--ink); }
+  a{ color:var(--accent); }
+  a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+
+  .shell{ max-width:1220px; margin:0 auto; padding:0 24px;
+    display:grid; grid-template-columns:230px minmax(0,1fr); gap:52px; }
+  @media (max-width:960px){ .shell{ grid-template-columns:1fr; } }
+
+  .spine{ position:sticky; top:20px; align-self:start; padding-top:120px;
+    display:flex; flex-direction:column; gap:1px; max-height:calc(100vh - 40px); overflow-y:auto; }
+  @media (max-width:960px){
+    .spine{ position:static; padding-top:0; flex-direction:row; overflow-x:auto; max-height:none;
+      gap:6px; padding-bottom:8px; margin-top:24px; border-bottom:1px solid var(--line); }
+  }
+  .spine a{ display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:8px;
+    text-decoration:none; color:var(--ink-muted); font-size:0.81rem; white-space:nowrap;
+    transition:background .15s, color .15s; }
+  .spine a:hover{ background:var(--surface-2); color:var(--ink); }
+  .spine .dot{ width:7px; height:7px; border-radius:50%; background:var(--dot,var(--accent)); flex:none; }
+  .spine .group-label{ font-family:"IBM Plex Mono",monospace; font-size:0.65rem; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--ink-muted); opacity:0.7; margin:14px 0 4px 10px; }
+  .spine .group-label:first-child{ margin-top:0; }
+
+  header.hero{ padding:64px 0 40px; border-bottom:1px solid var(--line); }
+  .eyebrow{ font-family:"IBM Plex Mono",monospace; font-size:0.72rem; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--accent); font-weight:600; margin:0 0 14px; }
+  h1{ font-family:"IBM Plex Sans KR",sans-serif; font-weight:700; font-size:clamp(1.6rem,3vw,2.3rem);
+    line-height:1.32; letter-spacing:-0.01em; margin:0 0 18px; text-wrap:balance; max-width:22ch; }
+  .lede{ font-family:"Noto Serif KR",serif; font-size:1.02rem; color:var(--ink-muted); max-width:66ch; margin:0 0 16px; }
+  .lede strong{ color:var(--ink); font-weight:600; }
+  .back-link{ font-family:"IBM Plex Mono",monospace; font-size:0.76rem; color:var(--ink-muted); }
+
+  main{ padding-bottom:100px; min-width:0; }
+  section{ padding:52px 0; border-bottom:1px solid var(--line); scroll-margin-top:24px; }
+  section:last-of-type{ border-bottom:none; }
+
+  .act-divider{ padding:36px 0 8px; }
+  .act-divider .eyebrow{ font-size:0.78rem; }
+  .act-divider h2{ font-size:1.6rem; margin-bottom:8px; }
+  .act-divider p{ color:var(--ink-muted); }
+
+  h2{ font-family:"IBM Plex Sans KR",sans-serif; font-weight:700; font-size:1.4rem; margin:0 0 8px; letter-spacing:-0.005em; }
+  .origin-row{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 24px; }
+  .origin{ font-family:"IBM Plex Mono",monospace; font-size:0.79rem; color:var(--ink-muted); }
+  .origin a{ color:var(--ink-muted); text-decoration-color:var(--line); }
+  .origin a:hover{ color:var(--accent); }
+
+  .status-pill{ display:inline-flex; align-items:center; gap:5px; font-family:"IBM Plex Mono",monospace;
+    font-size:0.68rem; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+  .status-pill.official{ background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good); }
+  .status-pill.archived{ background:color-mix(in srgb, var(--warn) 16%, transparent); color:var(--warn); }
+  .status-pill.community{ background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent); }
+  .status-pill.custom{ background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad); }
+
+  h3{ font-family:"IBM Plex Sans KR",sans-serif; font-weight:600; font-size:0.98rem; margin:30px 0 12px; color:var(--ink); }
+  p{ font-family:"Noto Serif KR",serif; font-size:0.96rem; max-width:68ch; margin:0 0 14px; color:var(--ink); }
+  p.muted{ color:var(--ink-muted); }
+  ol.steps, ul.plain{ font-family:"Noto Serif KR",serif; font-size:0.94rem; max-width:68ch; padding-left:22px; margin:0 0 16px; }
+  ol.steps li, ul.plain li{ margin-bottom:8px; }
+  ol.steps li::marker{ font-family:"IBM Plex Mono",monospace; color:var(--accent-local,var(--accent)); font-weight:600; }
+
+  .pattern{ --accent-local:var(--accent); }
+  .pattern[data-pattern="react"]{ --accent-local:var(--react); }
+  .pattern[data-pattern="plan"]{ --accent-local:var(--plan); }
+  .pattern[data-pattern="rewoo"]{ --accent-local:var(--rewoo); }
+  .pattern[data-pattern="reflexion"]{ --accent-local:var(--reflexion); }
+  .pattern[data-pattern="lats"]{ --accent-local:var(--lats); }
+  .pattern[data-pattern="tot"]{ --accent-local:var(--tot); }
+  .pattern[data-pattern="selfask"]{ --accent-local:var(--selfask); }
+  .pattern[data-pattern="adapt"]{ --accent-local:var(--adapt); }
+  .pattern[data-pattern="codeact"]{ --accent-local:var(--codeact); }
+  .pattern[data-pattern="voyager"]{ --accent-local:var(--voyager); }
+  .pattern .eyebrow{ color:var(--accent-local); }
+
+  .diagram{ background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:24px 22px; box-shadow:var(--shadow); margin:8px 0 26px; overflow-x:auto; }
+  .flow{ display:flex; align-items:center; gap:0; min-width:max-content; }
+  .flow.wrap{ flex-wrap:wrap; row-gap:14px; }
+  .node{ font-family:"IBM Plex Mono",monospace; font-size:0.77rem; font-weight:500; color:var(--ink);
+    background:var(--bg); border:1.5px solid var(--accent-local); border-radius:9px;
+    padding:10px 13px; text-align:center; line-height:1.35; max-width:160px; }
+  .node .tag{ display:block; font-family:"IBM Plex Sans KR",sans-serif; font-size:0.65rem;
+    color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; }
+  .arrow{ flex:none; width:26px; height:1.5px; background:var(--accent-local);
+    position:relative; margin:0 4px; opacity:0.65; }
+  .arrow::after{ content:""; position:absolute; right:0; top:50%; width:6px; height:6px;
+    border-right:1.5px solid var(--accent-local); border-bottom:1.5px solid var(--accent-local);
+    transform:translate(-2px,-50%) rotate(-45deg); }
+  .arrow.down{ width:1.5px; height:22px; margin:6px auto; }
+  .arrow.down::after{ right:50%; top:100%; transform:translate(3px,-8px) rotate(45deg); }
+  .branch{ display:flex; flex-direction:column; align-items:center; gap:0; }
+  .branch .kids{ display:flex; gap:14px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
+  .loop-note{ display:inline-flex; align-items:center; gap:6px; font-family:"IBM Plex Mono",monospace;
+    font-size:0.73rem; color:var(--accent-local); margin-top:14px; background:var(--accent-soft);
+    padding:6px 12px; border-radius:20px; }
+
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1px;
+    background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:10px 0 26px; }
+  .stat{ background:var(--surface); padding:14px 15px; }
+  .stat .label{ font-family:"IBM Plex Sans KR",sans-serif; font-size:0.66rem; color:var(--ink-muted);
+    text-transform:uppercase; letter-spacing:0.04em; margin:0 0 5px; }
+  .stat .value{ font-family:"IBM Plex Mono",monospace; font-size:0.84rem; font-weight:600; color:var(--ink); }
+
+  .note{ background:var(--accent-soft); border-left:3px solid var(--accent-local,var(--accent));
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:20px 0;
+    font-family:"Noto Serif KR",serif; font-size:0.91rem; color:var(--ink); }
+  .note strong{ font-family:"IBM Plex Sans KR",sans-serif; }
+  .note.warn{ border-left-color:var(--warn); background:color-mix(in srgb, var(--warn) 10%, var(--accent-soft)); }
+
+  /* code blocks */
+  .code-wrap{ margin:18px 0 26px; border-radius:12px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--shadow); }
+  .code-head{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--surface-2); padding:9px 15px; font-family:"IBM Plex Mono",monospace; font-size:0.72rem;
+    color:var(--ink-muted); border-bottom:1px solid var(--line); }
+  .code-head .fname{ color:var(--ink); font-weight:500; }
+  .code-wrap pre{ margin:0; background:#1B1F2B; overflow-x:auto; }
+  .code-wrap code{ display:block; padding:16px 18px; font-family:"IBM Plex Mono",monospace;
+    font-size:0.79rem; line-height:1.65; color:#C7CCDA; white-space:pre; tab-size:4; }
+  .hljs-keyword,.hljs-title.function_,.hljs-title.class_ + .hljs-title.class_{ color:#7FA6E8; }
+  .hljs-string{ color:#8FCB8A; }
+  .hljs-comment{ color:#6B7385; font-style:italic; }
+  .hljs-number{ color:#E8A96B; }
+  .hljs-title.function_{ color:#D8B4E2; }
+  .hljs-title.class_{ color:#E0A5D8; }
+  .hljs-built_in,.hljs-type{ color:#79C7C4; }
+  .hljs-decorator,.hljs-meta{ color:#E0A5D8; }
+  .hljs-params{ color:#C7CCDA; }
+  .hljs-literal{ color:#E8A96B; }
+  .hljs-attr{ color:#9FC7F0; }
+  code.inline{ font-family:"IBM Plex Mono",monospace; background:var(--surface-2); padding:1px 6px;
+    border-radius:5px; font-size:0.87em; color:var(--ink); }
+
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  table{ border-collapse:collapse; width:100%; min-width:760px; font-size:0.83rem; }
+  thead th{ font-family:"IBM Plex Sans KR",sans-serif; font-weight:600; text-align:left; padding:12px 14px;
+    background:var(--surface-2); color:var(--ink); border-bottom:1px solid var(--line); }
+  thead th:first-child{ color:var(--ink-muted); font-weight:500; }
+  tbody th{ text-align:left; font-family:"IBM Plex Sans KR",sans-serif; font-weight:500; font-size:0.81rem;
+    color:var(--ink-muted); padding:11px 14px; white-space:nowrap; vertical-align:top; }
+  tbody td{ font-family:"Noto Serif KR",serif; padding:11px 14px; color:var(--ink); border-top:1px solid var(--line); vertical-align:top; }
+
+  .split{ display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:8px 0 8px; }
+  @media (max-width:640px){ .split{ grid-template-columns:1fr; } }
+  .box{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; }
+  .box h4{ font-family:"IBM Plex Sans KR",sans-serif; font-size:0.85rem; font-weight:600; margin:0 0 10px; }
+  .box ul{ margin:0; padding-left:18px; }
+  .box li{ font-family:"Noto Serif KR",serif; font-size:0.9rem; margin-bottom:8px; color:var(--ink); }
+  .box li:last-child{ margin-bottom:0; }
+
+  footer{ padding:36px 0 60px; font-family:"IBM Plex Mono",monospace; font-size:0.77rem; color:var(--ink-muted); }
+  footer .src-title{ font-family:"IBM Plex Sans KR",sans-serif; font-size:0.85rem; color:var(--ink); font-weight:600; margin:0 0 12px; }
+  footer ul{ margin:0 0 20px; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:6px; }
+  footer a{ color:var(--ink-muted); }
+  footer a:hover{ color:var(--accent); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+
+<div class="shell">
+  <nav class="spine" aria-label="섹션 이동">
+    <a href="#intro" style="--dot:var(--accent)"><span class="dot"></span>시작하며</a>
+    <a href="#status" style="--dot:var(--accent)"><span class="dot"></span>구현 현황</a>
+    <a href="#setup" style="--dot:var(--accent)"><span class="dot"></span>개발 준비</a>
+    <p class="group-label">핵심 5패턴</p>
+    <a href="#react" style="--dot:var(--react)"><span class="dot"></span>ReAct</a>
+    <a href="#plan" style="--dot:var(--plan)"><span class="dot"></span>Plan-and-Execute</a>
+    <a href="#rewoo" style="--dot:var(--rewoo)"><span class="dot"></span>ReWOO</a>
+    <a href="#reflexion" style="--dot:var(--reflexion)"><span class="dot"></span>Reflexion</a>
+    <a href="#lats" style="--dot:var(--lats)"><span class="dot"></span>LATS</a>
+    <p class="group-label">확장 5패턴</p>
+    <a href="#tot" style="--dot:var(--tot)"><span class="dot"></span>Tree of Thoughts</a>
+    <a href="#selfask" style="--dot:var(--selfask)"><span class="dot"></span>Self-Ask</a>
+    <a href="#adapt" style="--dot:var(--adapt)"><span class="dot"></span>ADaPT</a>
+    <a href="#codeact" style="--dot:var(--codeact)"><span class="dot"></span>CodeAct</a>
+    <a href="#voyager" style="--dot:var(--voyager)"><span class="dot"></span>Voyager형 스킬 라이브러리</a>
+    <p class="group-label">마무리</p>
+    <a href="#checklist" style="--dot:var(--accent)"><span class="dot"></span>체크리스트</a>
+  </nav>
+
+  <main>
+    <header class="hero" id="intro">
+      <p class="eyebrow">LANGCHAIN / LANGGRAPH DEVELOPER GUIDE · 2026-08</p>
+      <h1>ReAct 패밀리 10패턴을 LangGraph로 직접 만든다</h1>
+      <p class="lede">
+        앞선 두 문서에서 정리한 ReAct, Plan-and-Execute, ReWOO, Reflexion, LATS(핵심 5패턴)와
+        Tree of Thoughts, Self-Ask, ADaPT, CodeAct, Voyager형 스킬 라이브러리(확장 5패턴)를
+        <strong>LangGraph 1.2.x(2026년 8월 기준 최신)</strong> API로 직접 구현한다. 각 패턴마다
+        아키텍처, 상태 스키마, 순서도, 그리고 <strong>실제로 실행 가능한 파이썬 코드</strong>를 담았다.
+      </p>
+      <p class="lede">
+        중요한 전제 하나: LangGraph는 2025년 하반기부터 <code class="inline">langgraph.prebuilt.create_react_agent</code>를
+        <code class="inline">langchain.agents.create_agent</code>로 대체하기 시작했고, ReWOO·Reflexion·LATS·Tree of
+        Thoughts의 공식 튜토리얼 페이지는 문서 사이트 개편 과정에서 실제로 <strong>내려갔다</strong>. 이 가이드는
+        각 패턴마다 "지금도 공식 유지 중인지, 과거 커밋에서 복원한 것인지, 커뮤니티 공식 라이브러리인지, 직접
+        설계한 것인지"를 명확한 배지로 표시한다 — 실제 코드베이스에 붙일 때 무엇을 검증해야 하는지 알 수 있도록.
+      </p>
+      <p class="back-link">← 각 패턴의 이론적 배경은 「ReAct 패밀리」·「ReAct 확장편」 문서 참고</p>
+    </header>
+
+    <!-- status matrix -->
+    <section id="status">
+      <p class="eyebrow">한눈에 보는 구현 현황</p>
+      <h2>10개 패턴, LangGraph 지원 상태</h2>
+      <p class="muted" style="margin-bottom:20px;">모든 링크와 상태는 2026년 8월 23일 기준 직접 확인한 결과다.
+        "보관됨"은 공식 튜토리얼 페이지가 내려가고 과거 커밋에만 남아있는 경우, "커뮤니티 공식"은
+        langchain-ai 조직이 유지하는 별도 라이브러리, "직접 설계"는 참고할 공식 구현이 전혀 없어 논문
+        메커니즘을 근거로 이 가이드가 새로 설계한 경우다.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>패턴</th><th>상태</th><th>핵심 API</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><th scope="row" style="color:var(--react)">ReAct</th><td><span class="status-pill official">공식 · 활성</span></td><td>create_agent / StateGraph</td><td>create_react_agent는 deprecated, create_agent가 후속</td></tr>
+            <tr><th scope="row" style="color:var(--plan)">Plan-and-Execute</th><td><span class="status-pill official">공식 · 활성</span></td><td>StateGraph + with_structured_output</td><td>여전히 순차 실행만 지원, 병렬화는 직접 추가 필요</td></tr>
+            <tr><th scope="row" style="color:var(--rewoo)">ReWOO</th><td><span class="status-pill archived">보관됨</span></td><td>StateGraph + Send</td><td>공식 노트북은 병렬 실행 미지원 — Send로 직접 보강</td></tr>
+            <tr><th scope="row" style="color:var(--reflexion)">Reflexion</th><td><span class="status-pill archived">보관됨</span></td><td>StateGraph + ToolNode</td><td>공식 노트북 재시도 로직에 실제 버그 존재(본문 참고)</td></tr>
+            <tr><th scope="row" style="color:var(--lats)">LATS</th><td><span class="status-pill archived">보관됨</span></td><td>StateGraph + Send + 순수 Python 트리</td><td>레거시 API(pydantic_v1 등) 다수, 전면 재작성 필요</td></tr>
+            <tr><th scope="row" style="color:var(--tot)">Tree of Thoughts</th><td><span class="status-pill custom">직접 재구성</span></td><td>StateGraph + 순수 Python 트리</td><td>원본 노트북 원문 복구 불가 — 논문 알고리즘 기준 재작성</td></tr>
+            <tr><th scope="row" style="color:var(--selfask)">Self-Ask</th><td><span class="status-pill custom">직접 설계</span></td><td>StateGraph 단순 루프</td><td>공식 구현 자체가 없음(2022년 프롬프팅 기법)</td></tr>
+            <tr><th scope="row" style="color:var(--adapt)">ADaPT</th><td><span class="status-pill custom">직접 설계</span></td><td>StateGraph + 명시적 스택</td><td>재귀를 스택으로 펼쳐 LangGraph의 반복 실행 모델에 맞춤</td></tr>
+            <tr><th scope="row" style="color:var(--codeact)">CodeAct</th><td><span class="status-pill community">커뮤니티 공식</span></td><td>langgraph-codeact (langchain-ai)</td><td>langchain-ai 조직이 직접 유지하는 별도 pip 패키지</td></tr>
+            <tr><th scope="row" style="color:var(--voyager)">Voyager형 스킬 라이브러리</th><td><span class="status-pill custom">직접 설계</span></td><td>StateGraph + Store(장기 메모리)</td><td>LangGraph의 cross-thread Store를 스킬 라이브러리로 활용</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- setup -->
+    <section id="setup">
+      <p class="eyebrow">개발 준비</p>
+      <h2>설치와 LangGraph 핵심 API 프라이머</h2>
+      <p>열 가지 패턴 전부가 공유하는 기초 블록이다. 각 패턴 섹션에서는 이 프라이머를 이미 알고 있다고
+        가정하고, 그 패턴만의 차이점에 집중한다.</p>
+
+      <h3>설치</h3>
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">setup.sh</span><span>bash</span></div>
+        <pre><code class="language-bash" id="code-install"></code></pre>
+      </div>
+
+      <h3>상태(State) 정의 — TypedDict · MessagesState</h3>
+      <p>모든 패턴은 <code class="inline">StateGraph</code>에 상태 스키마를 등록하는 것에서 시작한다.
+        가장 흔한 형태는 대화형 상태를 위한 <code class="inline">MessagesState</code>이고, 여러 필드가
+        동시에 갱신될 때는 <code class="inline">Annotated[T, reducer]</code>로 병합 방식을 명시해야 한다.</p>
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">state_basics.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-state-basics"></code></pre>
+      </div>
+
+      <h3>그래프 구성 — 노드 · 엣지 · 조건부 라우팅</h3>
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">graph_basics.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-graph-basics"></code></pre>
+      </div>
+
+      <h3>도구, ToolNode, 체크포인터</h3>
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">tools_and_memory.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-tools-memory"></code></pre>
+      </div>
+
+      <div class="note">
+        <strong>가장 중요한 전제.</strong> <code class="inline">langgraph.prebuilt.create_react_agent</code>는
+        deprecated이며(제거되지는 않음), 새 코드에서는 <code class="inline">langchain.agents.create_agent</code>를
+        권장한다. 두 API 모두 내부적으로는 "도구를 바인딩한 LLM 노드 + ToolNode + 조건부 엣지"라는 같은
+        LangGraph 루프로 컴파일된다 — 이 가이드는 메커니즘을 가르치기 위해 이후에도 계속 수동
+        <code class="inline">StateGraph</code> 버전을 함께 보여준다.
+      </div>
+
+      <h3>공통 주의사항</h3>
+      <div class="split">
+        <div class="box">
+          <h4>거의 모든 패턴에 해당</h4>
+          <ul>
+            <li><code class="inline">recursion_limit</code>(기본 25)은 루프가 도는 안전장치일 뿐, 값을 무작정
+              올리는 게 해법이 아니다 — 걸린다는 것 자체가 종료 조건 설계 결함의 신호다.</li>
+            <li>여러 병렬 브랜치가 같은 상태 키에 쓸 때는 <code class="inline">Annotated[dict, operator.or_]</code>
+              같은 병합 리듀서가 필수다. 없으면 마지막 쓰기만 남거나 충돌 에러가 난다.</li>
+            <li><code class="inline">model.with_structured_output(PydanticModel)</code>은 "깔끔한 타입 객체"가
+              필요할 때, <code class="inline">bind_tools(...)</code>+파서는 "ToolNode가 소비할 tool_call이
+              달린 메시지"가 필요할 때 — 둘을 섞어 쓰면 그래프 배선이 꼬인다.</li>
+            <li><code class="inline">langchain_community.tools.tavily_search.TavilySearchResults</code>는
+              deprecated — <code class="inline">langchain_tavily.TavilySearch</code>로 교체.</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h4>모델 ID에 대한 안내</h4>
+          <ul>
+            <li>이 문서의 코드에 등장하는 모델 문자열(<code class="inline">gpt-4o</code>,
+              <code class="inline">claude-sonnet-...</code> 등)은 예시다.</li>
+            <li>모델 제공사는 스냅샷을 주기적으로 갱신하므로, 실제 배포 전 각 제공사 문서에서
+              현재 유효한 모델 ID를 반드시 다시 확인할 것.</li>
+            <li>가능하면 <code class="inline">langchain.chat_models.init_chat_model("provider:model")</code>
+              같은 provider-agnostic 생성자를 쓰면 모델 교체가 한 줄로 끝난다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 1 divider -->
+    <div class="act-divider">
+      <p class="eyebrow">ACT 1</p>
+      <h2>핵심 5패턴 구현</h2>
+      <p>ReAct → Plan-and-Execute → ReWOO → Reflexion → LATS 순으로, "계획을 언제 세우는가" 축을 따라 구현한다.</p>
+    </div>
+
+    <!-- REACT -->
+    <section class="pattern" data-pattern="react" id="react">
+      <p class="eyebrow">핵심 패턴 1 · 매 스텝 즉흥 추론</p>
+      <h2>ReAct</h2>
+      <div class="origin-row"><span class="status-pill official">공식 · 활성</span>
+        <span class="origin">langgraph.prebuilt.create_react_agent (deprecated) → langchain.agents.create_agent (현재)</span></div>
+
+      <div class="diagram">
+        <div class="flow">
+          <div class="node"><span class="tag">agent</span>도구 바인딩 LLM 호출</div>
+          <div class="arrow"></div>
+          <div class="node" style="border-style:dashed;">tool_calls 있음?</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">tools</span>ToolNode 실행</div>
+        </div>
+        <div class="loop-note">↺ tools → agent로 되돌아가 반복, tool_calls가 없으면 END</div>
+      </div>
+
+      <p>가장 먼저 원라이너로 감을 잡고, 이어서 <code class="inline">StateGraph</code>로 직접 만들어 메커니즘을
+        본다. 실무에서는 원라이너를 쓰더라도, 아래 수동 버전이 바로 그 원라이너가 내부적으로 하는 일이다.</p>
+
+      <h3>버전 A — 한 줄로 (create_agent)</h3>
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">react_oneliner.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-react-oneliner"></code></pre>
+      </div>
+
+      <h3>버전 B — StateGraph로 직접 만들기 (메커니즘 학습용)</h3>
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">react_manual.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-react-manual"></code></pre>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><p class="label">LLM 호출</p><p class="value">스텝당 1회</p></div>
+        <div class="stat"><p class="label">종료 조건</p><p class="value">tool_calls 없음</p></div>
+        <div class="stat"><p class="label">메모리</p><p class="value">InMemorySaver + thread_id</p></div>
+        <div class="stat"><p class="label">주의</p><p class="value">recursion_limit 명시</p></div>
+      </div>
+    </section>
+
+    <!-- PLAN AND EXECUTE -->
+    <section class="pattern" data-pattern="plan" id="plan">
+      <p class="eyebrow">핵심 패턴 2 · 사전 계획 후 실행</p>
+      <h2>Plan-and-Execute</h2>
+      <div class="origin-row"><span class="status-pill official">공식 · 활성</span>
+        <span class="origin">LangGraph 공식 튜토리얼 (Plan-and-Execute), 2026년 API로 갱신</span></div>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">planner</span>구조화 출력으로 전체 계획 생성</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">agent</span>plan[0] 한 단계를 ReAct 서브에이전트로 실행</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">replan</span>완료? 답변 or 남은 계획 갱신</div>
+        </div>
+        <div class="loop-note">↺ response가 채워질 때까지 replan → agent 반복</div>
+      </div>
+
+      <p>플래너가 <code class="inline">Plan</code>(steps 목록)을, 리플래너가 <code class="inline">Act</code>
+        (<code class="inline">Response</code> 또는 <code class="inline">Plan</code>의 합집합 타입)를 각각
+        구조화 출력으로 내놓는다. 공식 노트북 자체가 "단계는 여전히 순차 실행되며, 병렬화가 필요하면 직접
+        DAG를 구성해야 한다"고 명시한다 — 이 가이드도 그 한계를 그대로 유지하되, 패키지만 현재 버전으로 갱신했다.</p>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">plan_and_execute.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-plan-execute"></code></pre>
+      </div>
+
+      <div class="note">
+        <strong>2026년 실무 동향.</strong> LangChain 포럼의 최근 논의는 이 손수 구현 대신
+        <code class="inline">create_agent</code> + <code class="inline">TodoListMiddleware</code>
+        (더 적은 LLM 호출로 같은 "계획 후 진행상황 추적" 개념을 미들웨어로 내장), 또는 복잡한 동적
+        오케스트레이션이 필요하면 별도 <code class="inline">deepagents</code> 라이브러리를 권하는 쪽으로
+        기울고 있다. 다만 메커니즘을 배우기엔 이 손수 구현이 여전히 가장 정확하다.
+      </div>
+
+      <div class="stats">
+        <div class="stat"><p class="label">LLM 호출</p><p class="value">계획 1 + 단계별 + 재계획</p></div>
+        <div class="stat"><p class="label">실행 방식</p><p class="value">async 권장 (순차 체인)</p></div>
+        <div class="stat"><p class="label">알려진 한계</p><p class="value">병렬화 미지원(기본형)</p></div>
+        <div class="stat"><p class="label">recursion_limit</p><p class="value">50 권장</p></div>
+      </div>
+    </section>
+
+    <!-- REWOO -->
+    <section class="pattern" data-pattern="rewoo" id="rewoo">
+      <p class="eyebrow">핵심 패턴 3 · 추론과 관찰의 분리</p>
+      <h2>ReWOO</h2>
+      <div class="origin-row"><span class="status-pill archived">보관됨 → Send로 현대화</span>
+        <span class="origin">공식 튜토리얼 페이지는 리다이렉트됨 — 과거 커밋에서 복원 후 병렬 실행 보강</span></div>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">plan</span>구조화 출력으로 #E 변수 포함 전체 계획 1회 생성</div>
+          <div class="arrow"></div>
+          <div class="node" style="border-style:dashed;">의존성 해소된 스텝?</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">run_tool</span>Send로 병렬 실행 → results에 기록</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">solve</span>계획+증거 종합 → 최종 답</div>
+        </div>
+        <div class="loop-note">↺ 새로 해소된 스텝이 있으면 run_tool로 다음 웨이브, 없으면 solve</div>
+      </div>
+
+      <p><strong>확인된 사실:</strong> 공식 노트북은 실제로는 병렬 실행을 구현하지 않는다 — 조건부 엣지로
+        한 번에 한 스텝씩 순차 실행할 뿐이다. 아래 코드는 <code class="inline">langgraph.types.Send</code>로
+        의존성이 해소된 스텝들을 웨이브 단위로 병렬 실행하도록 보강한 버전이다. 의존 관계가 있는 스텝(예:
+        <code class="inline">#E2</code>가 <code class="inline">#E1</code>을 참조)은 자동으로 다음 웨이브로
+        미뤄진다 — 그래야 잘못된 변수 치환을 막을 수 있다.</p>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">rewoo.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-rewoo"></code></pre>
+      </div>
+
+      <div class="split">
+        <div class="box">
+          <h4>구현 시 주의할 점</h4>
+          <ul>
+            <li>병렬 브랜치가 함께 쓰는 <code class="inline">results</code>는 반드시
+              <code class="inline">Annotated[dict, operator.or_]</code>로 병합 리듀서를 선언한다.</li>
+            <li>계획이 잘못돼 어떤 변수도 영영 해소되지 않으면, "더 이상 준비된 스텝 없음" 시점에
+              바로 solve로 빠져나가야 한다 — 단순 반복 횟수 카운터만으론 불충분하다.</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h4>패키지 교체</h4>
+          <ul>
+            <li><code class="inline">TavilySearchResults</code> → <code class="inline">langchain_tavily.TavilySearch</code></li>
+            <li>정규식 파싱 대신 <code class="inline">with_structured_output(Plan)</code>으로 계획을
+              타입 안전하게 받는다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- REFLEXION -->
+    <section class="pattern" data-pattern="reflexion" id="reflexion">
+      <p class="eyebrow">핵심 패턴 4 · 실패 후 자기비평을 메모리에</p>
+      <h2>Reflexion</h2>
+      <div class="origin-row"><span class="status-pill archived">보관됨 → 버그 수정 후 현대화</span>
+        <span class="origin">공식 튜토리얼 페이지는 리다이렉트됨 — 과거 커밋에서 복원, 재시도 로직 버그 발견·수정</span></div>
+
+      <div class="diagram">
+        <div class="flow">
+          <div class="node"><span class="tag">draft</span>초안 + 자기비평 + 검색어(구조화 출력)</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">execute_tools</span>ToolNode로 검색어 실행</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">revise</span>인용 포함 개정판 + 새 비평 + 새 검색어</div>
+        </div>
+        <div class="loop-note">↺ revise → execute_tools 반복, 개정 횟수가 한도를 넘으면 END</div>
+      </div>
+
+      <p>메시지 리스트 자체가 곧 에피소드 메모리다 — 매 개정마다 이전 초안·비평·검색 결과가 전부 컨텍스트에
+        남는다. <code class="inline">AnswerQuestion</code>(초안용)과 <code class="inline">ReviseAnswer</code>
+        (개정용, <code class="inline">references</code> 필드 추가) 두 스키마를 <strong>같은 이름의 도구</strong>로
+        하나의 <code class="inline">ToolNode</code>에 등록해, 초안이든 개정이든 같은 검색 실행 함수로 처리한다.</p>
+
+      <div class="note warn">
+        <strong>공식 노트북에서 발견한 버그.</strong> 검증 실패 시 재시도하는 <code class="inline">ResponderWithRetries</code>가
+        <code class="inline">state = state + [response, ToolMessage(...)]</code>를 실행하는데, 이 시점의
+        <code class="inline">state</code>는 <code class="inline">dict</code>라 <code class="inline">dict + list</code>는
+        <code class="inline">TypeError</code>를 던진다 — 즉 Pydantic 검증에 처음 실패하면 재시도가 아니라
+        그대로 크래시한다. 공개된 데모에서는 이 분기가 실행된 적이 없어 발견되지 않았던 것으로 보인다.
+        아래 코드는 <code class="inline">state["messages"]</code> 리스트에 직접 append하도록 고쳤다.
+      </div>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">reflexion.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-reflexion"></code></pre>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><p class="label">최대 개정 횟수</p><p class="value">MAX_ITERATIONS(예: 3)</p></div>
+        <div class="stat"><p class="label">메모리</p><p class="value">누적 메시지 리스트 = 에피소드 메모리</p></div>
+        <div class="stat"><p class="label">구조화 출력 방식</p><p class="value">bind_tools + PydanticToolsParser</p></div>
+        <div class="stat"><p class="label">알려진 버그</p><p class="value">위 note 참고, 수정 반영됨</p></div>
+      </div>
+    </section>
+
+    <!-- LATS -->
+    <section class="pattern" data-pattern="lats" id="lats">
+      <p class="eyebrow">핵심 패턴 5 · 몬테카를로 트리 탐색</p>
+      <h2>LATS</h2>
+      <div class="origin-row"><span class="status-pill archived">보관됨 → 전면 현대화</span>
+        <span class="origin">공식 튜토리얼 페이지는 리다이렉트됨 — 레거시 API(pydantic_v1, ToolExecutor 등) 전면 교체</span></div>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">select</span>UCT로 리프까지 하강</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">generate_candidate</span>Send로 N개 후보 병렬 생성+평가</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">backpropagate</span>자식으로 편입, 보상 역전파</div>
+        </div>
+        <div class="loop-note">↺ 해가 없고 예산이 남으면 select로 복귀, 트리는 순수 Python 객체로 별도 관리</div>
+      </div>
+
+      <p>LangGraph는 트리 자체를 상태 스키마로 감당하지 않는다 — <code class="inline">TreeState</code>는
+        <code class="inline">root</code>·<code class="inline">selected</code> 같은 <em>참조</em>만 들고 있고,
+        실제 부모/자식 링크, 방문 횟수, UCT 계산은 평범한 파이썬 <code class="inline">Node</code> 클래스가
+        담당한다. "LangGraph는 바깥 루프만, 트리는 순수 Python이 소유"하는 이 분리가 현재도 권장되는 접근이다.</p>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">lats.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-lats"></code></pre>
+      </div>
+
+      <div class="split">
+        <div class="box">
+          <h4>레거시 → 현재 API 교체 목록</h4>
+          <ul>
+            <li><code class="inline">langchain_core.pydantic_v1</code> → 순정 <code class="inline">pydantic</code>(v2)</li>
+            <li><code class="inline">ToolExecutor</code>/<code class="inline">ToolInvocation</code> → 도구를
+              직접 <code class="inline">.invoke()</code> 하거나 <code class="inline">ToolNode</code> 사용</li>
+            <li><code class="inline">llm.generate(n=N)</code>(일부 제공사 전용) → <code class="inline">Send</code>
+              기반 병렬 팬아웃</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h4>탐색 관련 주의</h4>
+          <ul>
+            <li>트리 변형(자식 추가 등)은 반드시 <code class="inline">backpropagate</code> 안에서
+              직렬로만 수행 — 병렬 브랜치가 공유 트리를 동시에 건드리면 경쟁 상태가 생긴다.</li>
+            <li><code class="inline">recursion_limit</code> 기본 25는 반복 탐색에 턱없이 부족 — 50~100 이상 지정.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 2 divider -->
+    <div class="act-divider">
+      <p class="eyebrow">ACT 2</p>
+      <h2>확장 5패턴 구현</h2>
+      <p>탐색 폭(Tree of Thoughts), 분해 시점(Self-Ask · ADaPT), 행동 표현(CodeAct), 지식 축적(Voyager형)
+        — 「ReAct 확장편」에서 다룬 나머지 네 축을 구현한다.</p>
+    </div>
+
+    <!-- TOT -->
+    <section class="pattern" data-pattern="tot" id="tot">
+      <p class="eyebrow">확장 패턴 1 · 순수 추론 탐색</p>
+      <h2>Tree of Thoughts</h2>
+      <div class="origin-row"><span class="status-pill custom">직접 재구성</span>
+        <span class="origin">공식 노트북 원문 복구 불가(문서 이관으로 소실) — 논문 알고리즘 기준 24게임으로 재작성</span></div>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">expand</span>프론티어 각 노드에서 k개 사고 제안</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">evaluate</span>sure/likely/impossible 채점(종단은 결정적 검사)</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">prune</span>상위 b개만 남겨 다음 프론티어로</div>
+        </div>
+        <div class="loop-note">↺ 해를 찾거나 깊이 한도에 닿을 때까지 expand로 복귀 — LATS와 달리 UCT·역전파 없음</div>
+      </div>
+
+      <p>LATS가 MCTS(UCT+역전파)라면, ToT는 <strong>너비 제한 BFS</strong>다 — 매 깊이마다 프론티어 전체를
+        한 번에 확장하고, 평가 점수로 정렬해 상위 <code class="inline">b</code>개만 남긴다. 24게임에서
+        4·9·10·13 같은 네 숫자로 24를 만드는 문제를 예시로 삼았다. LLM의 산술 계산은 신뢰하지 않고, 연산
+        결과와 "정확히 24인가"는 파이썬으로 결정적으로 재계산한다 — 검증 가능한 것을 LLM 판단에 맡기지 않는다.</p>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">tree_of_thoughts.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-tot"></code></pre>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><p class="label">탐색 방식</p><p class="value">BFS(b), UCT 없음</p></div>
+        <div class="stat"><p class="label">가치 추정</p><p class="value">LLM 투표 or 결정적 검사</p></div>
+        <div class="stat"><p class="label">LATS와 차이</p><p class="value">역전파 없음, 프론티어 단위 확장</p></div>
+      </div>
+    </section>
+
+    <!-- SELF-ASK -->
+    <section class="pattern" data-pattern="selfask" id="selfask">
+      <p class="eyebrow">확장 패턴 2 · 후속 질문으로 분해</p>
+      <h2>Self-Ask</h2>
+      <div class="origin-row"><span class="status-pill custom">직접 설계</span>
+        <span class="origin">2022년 프롬프팅 기법 — LangGraph 참조 구현 자체가 존재하지 않음</span></div>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">reason</span>후속질문 필요? + (필요시) 다음 질문</div>
+          <div class="arrow"></div>
+          <div class="node" style="border-style:dashed;">need_followup & hop < MAX?</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">search_followup</span>검색 실행 → (질문,답) 누적</div>
+        </div>
+        <div class="loop-note">↺ search_followup → reason 반복, 아니면 finish로 최종 답</div>
+      </div>
+
+      <p>원 논문의 "Are follow up questions needed here:" 판단과 "Follow up: ..." 질문 생성을 구조화 출력
+        하나로 합쳤다(토큰 효율↑). <code class="inline">hop</code> 카운터가 의미 있는 종료 장치이고,
+        <code class="inline">recursion_limit</code>은 그보다 넉넉한 값으로 잡아 둘째 안전장치로만 쓴다.</p>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">self_ask.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-selfask"></code></pre>
+      </div>
+    </section>
+
+    <!-- ADAPT -->
+    <section class="pattern" data-pattern="adapt" id="adapt">
+      <p class="eyebrow">확장 패턴 3 · 필요할 때만 재귀 분해</p>
+      <h2>ADaPT</h2>
+      <div class="origin-row"><span class="status-pill custom">직접 설계</span>
+        <span class="origin">논문 Algorithm 1(ADAPT(Task, depth))을 명시적 스택으로 펼쳐 LangGraph에 맞춤</span></div>
+
+      <div class="diagram">
+        <div class="branch">
+          <div class="node"><span class="tag">execute_task</span>스택 top이 task면 실행 시도</div>
+          <div class="arrow down"></div>
+          <div class="node" style="border-style:dashed;">성공 / 실패+depth 초과 / 실패+분해 가능</div>
+          <div class="kids">
+            <div class="node" style="max-width:110px">성공 → 결과 기록</div>
+            <div class="node" style="max-width:120px">실패+한도 → 포기(False)</div>
+            <div class="node" style="max-width:130px">실패 → join+자식 task를 스택에 push(LIFO)</div>
+          </div>
+        </div>
+        <div class="loop-note">↺ join 프레임은 자식이 모두 해소된 뒤 AND/OR로 결합, 스택이 빌 때까지 반복</div>
+      </div>
+
+      <p>LangGraph는 그래프가 자기 자신을 임의 깊이로 호출하는 진짜 재귀에 최적화돼 있지 않다. 그래서
+        재귀 호출 스택을 <strong>명시적 LIFO 스택</strong>으로 펼쳤다 — join 프레임을 자식 task 프레임들보다
+        먼저 push해두면, LIFO 팝 순서가 자동으로 "자식이 모두 끝난 뒤 부모를 합친다"는 후위 순회를 보장한다.
+        <code class="inline">depth >= max_depth</code>에서 그대로 포기(<code class="inline">False</code>)하는 것도
+        원 논문의 <code class="inline">if k > dmax: return False</code>를 그대로 따른 것이다 — 강제로 직접
+        실행시키는 폴백은 없다.</p>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">adapt.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-adapt"></code></pre>
+      </div>
+
+      <div class="note">
+        <strong>대안 설계도 있다.</strong> 노드 함수가 컴파일된 그래프 자신을 런타임에
+        <code class="inline">.invoke()</code>해서 진짜 자기재귀를 흉내내는 방법도 가능하다 — Algorithm 1과
+        더 직접적으로 대응되지만, 재귀 호출마다 독립된 Pregel 실행이 시작돼 바깥쪽 실행의
+        <code class="inline">recursion_limit</code>·체크포인터·<code class="inline">stream()</code>이 안쪽까지
+        보이지 않는다는 단점이 있다. 관측 가능성이 중요한 디버깅 단계에서는 위 스택 방식을 권장한다.
+      </div>
+    </section>
+
+    <!-- CODEACT -->
+    <section class="pattern" data-pattern="codeact" id="codeact">
+      <p class="eyebrow">확장 패턴 4 · 행동 자체를 코드로</p>
+      <h2>CodeAct</h2>
+      <div class="origin-row"><span class="status-pill community">커뮤니티 공식</span>
+        <span class="origin">langchain-ai/langgraph-codeact — langchain-ai 조직이 직접 유지하는 별도 pip 패키지</span></div>
+
+      <div class="diagram">
+        <div class="flow">
+          <div class="node"><span class="tag">call_model</span>시스템 프롬프트에 도구를 함수 스텁으로 노출, 코드블록 생성</div>
+          <div class="arrow"></div>
+          <div class="node" style="border-style:dashed;">코드블록 있음?</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">sandbox</span>context(누적 변수+도구)와 함께 exec, 새 변수 병합</div>
+        </div>
+        <div class="loop-note">↺ sandbox → call_model 반복, 코드 없이 텍스트만 응답하면 종료</div>
+      </div>
+
+      <p>도구가 JSON tool_call이 아니라 <strong>시스템 프롬프트에 함수 스텁으로 노출</strong>되고, 모델은
+        <code class="inline">result = add(2, 3)</code>처럼 실제 파이썬 코드를 작성한다. 실행 결과(stdout)는
+        <code class="inline">user</code> 역할 메시지로 되돌아가 다음 턴의 관찰이 되고, 코드에서 정의한
+        최상위 변수는 <code class="inline">context</code>에 누적돼 다음 코드 블록에서 그대로 참조할 수 있다
+        — CodeAct 논문이 강조하는 "지속되는 인터프리터 상태"다.</p>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">codeact_example.py</span><span>python · langgraph-codeact 공식 예제</span></div>
+        <pre><code class="language-python" id="code-codeact"></code></pre>
+      </div>
+
+      <div class="note warn">
+        <strong>샌드박스 보안 주의.</strong> 위 <code class="inline">eval()</code> 함수는 순정
+        <code class="inline">exec()</code>를 사용한다 — 학습·데모용이며 신뢰할 수 없는 코드나 프로덕션에는
+        절대 그대로 쓰면 안 된다. 한때 권장되던 <code class="inline">langchain_experimental.PythonREPL</code>은
+        더 이상 유지되지 않고, 그 대안이던 <code class="inline">langchain-sandbox</code>(Pyodide 기반)도
+        2026년 1월에 아카이브됐다. 실제 배포에서는 컨테이너·gVisor·Firecracker·E2B 같은 별도 격리 샌드박스에서
+        <code class="inline">eval_fn</code>을 실행하도록 교체할 것.
+      </div>
+    </section>
+
+    <!-- VOYAGER -->
+    <section class="pattern" data-pattern="voyager" id="voyager">
+      <p class="eyebrow">확장 패턴 5 · 영구 스킬 라이브러리</p>
+      <h2>Voyager형 스킬 라이브러리 에이전트</h2>
+      <div class="origin-row"><span class="status-pill custom">직접 설계</span>
+        <span class="origin">공식 langgraph-voyager 패키지는 존재하지 않음 — 마인크래프트 특화 논문을 범용 에이전트로 일반화</span></div>
+
+      <div class="diagram">
+        <div class="flow wrap">
+          <div class="node"><span class="tag">propose_goal</span>커리큘럼: 다음 하위 목표 제안</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">retrieve_skills</span>Store에서 관련 스킬 의미검색</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">generate_code</span>스킬 재사용하며 코드 작성</div>
+          <div class="arrow"></div>
+          <div class="node"><span class="tag">execute → verify</span>샌드박스 실행 후 자기검증</div>
+        </div>
+        <div class="loop-note">↺ 성공 시 save_skill로 Store에 영구 저장 후 propose_goal로, 실패 시 재시도 또는 포기</div>
+      </div>
+
+      <p>Reflexion의 메모리가 "이번 시도가 왜 실패했나"를 담은 <em>휘발성</em> 반성문이라면, Voyager형
+        메모리는 <strong>성공한 코드 자체를 이름 붙여 영구 저장</strong>한다. LangGraph의 체크포인터
+        (<code class="inline">InMemorySaver</code>, 세션 내 단기 상태)와 스토어(<code class="inline">InMemoryStore</code>,
+        스레드를 넘나드는 장기 저장소)는 정확히 이 두 층위에 대응한다 — 스킬 라이브러리는 스토어의 의미
+        검색 인덱스에 <code class="inline">{설명, 코드}</code>로 저장하고, 다음 작업에서
+        <code class="inline">store.search()</code>로 관련 스킬을 불러와 조합한다.</p>
+
+      <div class="code-wrap">
+        <div class="code-head"><span class="fname">voyager_style_agent.py</span><span>python</span></div>
+        <pre><code class="language-python" id="code-voyager"></code></pre>
+      </div>
+
+      <div class="split">
+        <div class="box">
+          <h4>이 설계의 핵심 선택</h4>
+          <ul>
+            <li>단기 상태(진행 중인 시도)는 체크포인터, 장기 지식(스킬)은 스토어 — LangGraph 기본
+              API 두 가지로 Voyager의 두 메모리 층위를 그대로 표현했다.</li>
+            <li><code class="inline">Runtime[AgentContext]</code>를 노드의 두 번째 인자로 받아
+              <code class="inline">runtime.store</code>·<code class="inline">runtime.context</code>에
+              접근하는 것이 현재 권장되는 방식이다(예전의 <code class="inline">config</code>+
+              <code class="inline">get_store()</code> 방식 대체).</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h4>실전 적용 시 교체할 부분</h4>
+          <ul>
+            <li>예제의 <code class="inline">fake_embed</code>는 외부 API 없이 돌아가게 한 더미 — 실제로는
+              <code class="inline">init_embeddings("openai:text-embedding-3-small")</code> 등 진짜 임베딩으로 교체.</li>
+            <li>영속성이 세션을 넘어 실제로 유지돼야 한다면 <code class="inline">InMemoryStore</code>/
+              <code class="inline">InMemorySaver</code>를 <code class="inline">PostgresStore</code>/
+              <code class="inline">PostgresSaver</code>로 교체.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- checklist -->
+    <section id="checklist" style="padding-bottom:20px;">
+      <p class="eyebrow">마무리</p>
+      <h2>배포 전 체크리스트</h2>
+      <ol class="steps">
+        <li><strong>recursion_limit을 패턴별로 명시했는가.</strong> 기본값 25는 ReAct 정도에만 적당하고,
+          Plan-and-Execute·LATS·ADaPT처럼 여러 서브루프가 겹치는 패턴은 50~100 이상 필요하다.</li>
+        <li><strong>병렬 브랜치가 쓰는 상태 키에 병합 리듀서를 선언했는가.</strong>
+          (<code class="inline">operator.add</code>, <code class="inline">operator.or_</code>, 또는 직접
+          작성한 병합 함수)</li>
+        <li><strong>deprecated API를 걷어냈는가.</strong> create_react_agent→create_agent,
+          TavilySearchResults→TavilySearch, pydantic_v1→pydantic, ToolExecutor→직접 invoke/ToolNode.</li>
+        <li><strong>구조화 출력과 tool-call 방식을 목적에 맞게 골랐는가.</strong> 타입 객체만 필요하면
+          <code class="inline">with_structured_output</code>, ToolNode가 소비해야 하면
+          <code class="inline">bind_tools</code>+파서.</li>
+        <li><strong>모델 ID를 하드코딩하지 않았는가.</strong> 제공사 문서에서 현재 유효한 스냅샷을 확인하거나
+          <code class="inline">init_chat_model</code>로 provider-agnostic하게 구성.</li>
+        <li><strong>샌드박스가 신뢰할 수 없는 코드를 실행하는 경우, 실제 격리 환경으로 교체했는가.</strong>
+          (CodeAct·Voyager형 패턴의 <code class="inline">exec()</code> 예제는 데모 전용)</li>
+        <li><strong>장기 실행 에이전트라면 체크포인터/스토어를 인메모리에서 영속 백엔드로 바꿨는가.</strong>
+          (SqliteSaver/PostgresSaver, PostgresStore 등)</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p class="src-title">참고 자료</p>
+      <ul>
+        <li><a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">LangGraph 공식 문서 (현재)</a></li>
+        <li><a href="https://docs.langchain.com/oss/python/langgraph/graph-api" target="_blank" rel="noopener">Graph API — StateGraph, 조건부 엣지</a></li>
+        <li><a href="https://docs.langchain.com/oss/python/migrate/langgraph-v1" target="_blank" rel="noopener">LangGraph v1 마이그레이션 가이드 (create_react_agent → create_agent)</a></li>
+        <li><a href="https://reference.langchain.com/python/langgraph/types/Send" target="_blank" rel="noopener">Send API 레퍼런스 (병렬 팬아웃)</a></li>
+        <li><a href="https://reference.langchain.com/python/langgraph.checkpoint/" target="_blank" rel="noopener">Checkpointer 레퍼런스 (InMemorySaver 등)</a></li>
+        <li><a href="https://github.com/langchain-ai/langgraph/blob/main/examples/plan-and-execute/plan-and-execute.ipynb" target="_blank" rel="noopener">Plan-and-Execute 공식 노트북</a></li>
+        <li><a href="https://github.com/langchain-ai/langgraph/blob/23961cff61a42b52525f3b20b4094d8d2fba1744/docs/docs/tutorials/rewoo/rewoo.ipynb" target="_blank" rel="noopener">ReWOO 노트북 (보관된 커밋)</a></li>
+        <li><a href="https://github.com/langchain-ai/langgraph/blob/23961cff61a42b52525f3b20b4094d8d2fba1744/docs/docs/tutorials/reflexion/reflexion.ipynb" target="_blank" rel="noopener">Reflexion 노트북 (보관된 커밋)</a></li>
+        <li><a href="https://arxiv.org/abs/2310.04406" target="_blank" rel="noopener">LATS 논문 (arXiv:2310.04406)</a></li>
+        <li><a href="https://arxiv.org/abs/2305.10601" target="_blank" rel="noopener">Tree of Thoughts 논문 (arXiv:2305.10601)</a></li>
+        <li><a href="https://arxiv.org/abs/2210.03350" target="_blank" rel="noopener">Self-Ask 논문 (arXiv:2210.03350)</a></li>
+        <li><a href="https://arxiv.org/abs/2311.05772" target="_blank" rel="noopener">ADaPT 논문 (arXiv:2311.05772)</a></li>
+        <li><a href="https://github.com/langchain-ai/langgraph-codeact" target="_blank" rel="noopener">langgraph-codeact 공식 저장소</a></li>
+        <li><a href="https://arxiv.org/abs/2402.01030" target="_blank" rel="noopener">CodeAct 논문 (arXiv:2402.01030)</a></li>
+        <li><a href="https://arxiv.org/abs/2305.16291" target="_blank" rel="noopener">Voyager 논문 (arXiv:2305.16291)</a></li>
+        <li><a href="https://docs.langchain.com/oss/python/langgraph/stores" target="_blank" rel="noopener">LangGraph Store 가이드 (장기 메모리)</a></li>
+      </ul>
+    </footer>
+  </main>
+</div>
+
+<script>
+const CODE = {};
+
+CODE["code-install"] = `# 핵심 설치
+pip install -U langgraph langchain
+
+# 모델 제공사 패키지 (필요한 것만)
+pip install -U langchain-anthropic
+pip install -U langchain-openai
+
+# 검색 도구 (TavilySearchResults는 deprecated, 이 패키지를 사용)
+pip install -U langchain-tavily
+
+# 영속 체크포인터 백엔드 (선택)
+pip install -U langgraph-checkpoint-sqlite
+pip install -U langgraph-checkpoint-postgres
+
+# CodeAct 패턴 전용
+pip install -U langgraph-codeact`;
+
+CODE["code-state-basics"] = `from typing import Annotated
+from typing_extensions import TypedDict
+from langgraph.graph import MessagesState
+from langgraph.graph.message import add_messages
+from langchain_core.messages import AnyMessage
+import operator
+
+# 1) 가장 흔한 형태: 대화형 상태
+class State(MessagesState):
+    documents: list[str]   # 필요하면 필드를 더 추가 가능
+
+# 2) 직접 정의하는 경우, 리듀서를 명시해야 병합된다
+class GraphState(TypedDict):
+    messages: Annotated[list[AnyMessage], add_messages]  # 메시지 인식 병합
+    past_steps: Annotated[list[tuple], operator.add]       # 단순 리스트 이어붙이기
+    results: Annotated[dict, operator.or_]                 # 병렬 브랜치가 쓰는 dict는 or_로 병합`;
+
+CODE["code-graph-basics"] = `from langgraph.graph import StateGraph, START, END
+
+builder = StateGraph(State)
+
+def my_node(state: State):
+    return {"key": "updated_value"}   # 부분 업데이트, 리듀서를 거쳐 병합됨
+
+builder.add_node("node_name", my_node)
+builder.add_edge(START, "node_name")
+builder.add_edge("node_name", END)
+
+def routing_function(state: State) -> str:
+    return "node_b" if state["foo"] == "bar" else "node_c"
+
+# 명시적 매핑을 주면 그래프 시각화·검증이 더 정확해진다
+builder.add_conditional_edges(
+    "node_a", routing_function, {"node_b": "node_b", "node_c": "node_c"}
+)
+
+graph = builder.compile()
+
+# 실행
+result = graph.invoke({"input": "data"}, config={"recursion_limit": 50})
+for event in graph.stream({"input": "data"}, stream_mode="values"):
+    print(event)`;
+
+CODE["code-tools-memory"] = `from langchain_core.tools import tool
+from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.checkpoint.memory import InMemorySaver
+
+@tool
+def multiply(a: float, b: float) -> float:
+    """Multiply two numbers together."""
+    return a * b
+
+tools = [multiply]
+model_with_tools = model.bind_tools(tools)
+
+# ToolNode: 마지막 AIMessage의 tool_calls를 실행해준다
+tool_node = ToolNode(tools, handle_tool_errors=True)
+# tools_condition: tool_calls가 있으면 도구 노드로, 없으면 END로 라우팅하는 표준 조건부 엣지
+
+checkpointer = InMemorySaver()
+graph = builder.compile(checkpointer=checkpointer)
+
+config = {"configurable": {"thread_id": "conversation-1"}}
+graph.invoke({"messages": [...]}, config)  # 같은 thread_id면 같은 대화가 이어진다`;
+
+CODE["code-react-oneliner"] = `# pip install -U langgraph langchain langchain-anthropic
+
+from langchain_core.tools import tool
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage
+
+@tool
+def multiply(a: float, b: float) -> float:
+    """Multiply two numbers together."""
+    return a * b
+
+@tool
+def add(a: float, b: float) -> float:
+    """Add two numbers together."""
+    return a + b
+
+tools = [multiply, add]
+model = ChatAnthropic(model="claude-sonnet-5")  # 배포 전 최신 모델 ID 확인
+
+# 현재 권장되는 한 줄짜리 (langchain.agents)
+from langchain.agents import create_agent
+
+agent = create_agent(model=model, tools=tools, system_prompt="You are a helpful math assistant.")
+result = agent.invoke({"messages": [HumanMessage(content="47 곱하기 83을 계산하고 12를 더해줘.")]})
+print(result["messages"][-1].content)`;
+
+CODE["code-react-manual"] = `# pip install -U langgraph langchain langchain-anthropic
+from typing import Annotated, Sequence
+from typing_extensions import TypedDict
+
+from langchain_core.messages import BaseMessage, ToolMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import tool
+from langchain_anthropic import ChatAnthropic
+
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+
+
+class AgentState(TypedDict):
+    messages: Annotated[Sequence[BaseMessage], add_messages]
+
+
+@tool
+def calculator(expression: str) -> str:
+    """Evaluate a basic arithmetic expression, e.g. '47 * 83 + 12'."""
+    try:
+        return str(eval(expression, {"__builtins__": {}}))  # 데모 전용, 프로덕션엔 안전한 파서 사용
+    except Exception as e:
+        return f"Error evaluating expression: {e}"
+
+
+tools = [calculator]
+tools_by_name = {t.name: t for t in tools}
+
+model = ChatAnthropic(model="claude-sonnet-5")
+model_with_tools = model.bind_tools(tools)
+
+
+def call_model(state: AgentState, config: RunnableConfig):
+    """Thought: LLM이 이력을 보고 답할지 도구를 부를지 결정."""
+    response = model_with_tools.invoke(state["messages"], config)
+    return {"messages": [response]}
+
+
+def call_tools(state: AgentState):
+    """Action + Observation: 요청된 모든 tool_call을 실행."""
+    last_message = state["messages"][-1]
+    outputs = []
+    for tool_call in last_message.tool_calls:
+        try:
+            result = tools_by_name[tool_call["name"]].invoke(tool_call["args"])
+        except Exception as e:
+            result = f"Tool execution error: {e}"
+        outputs.append(
+            ToolMessage(content=str(result), name=tool_call["name"], tool_call_id=tool_call["id"])
+        )
+    return {"messages": outputs}
+
+
+def should_continue(state: AgentState) -> str:
+    last_message = state["messages"][-1]
+    if getattr(last_message, "tool_calls", None):
+        return "tools"
+    return "end"
+
+
+builder = StateGraph(AgentState)
+builder.add_node("agent", call_model)
+builder.add_node("tools", call_tools)
+builder.add_edge(START, "agent")
+builder.add_conditional_edges("agent", should_continue, {"tools": "tools", "end": END})
+builder.add_edge("tools", "agent")  # Observation이 다음 Thought로 되먹임
+
+graph = builder.compile(checkpointer=InMemorySaver())
+
+config = {"configurable": {"thread_id": "demo-1"}, "recursion_limit": 25}
+inputs = {"messages": [HumanMessage(content="47 곱하기 83을 계산하고 12를 더해줘. 풀이 과정도 보여줘.")]}
+
+final_state = graph.invoke(inputs, config)
+print("FINAL ANSWER:", final_state["messages"][-1].content)`;
+
+CODE["code-plan-execute"] = `# pip install -U langgraph langchain langchain-openai langchain-tavily
+import os, operator
+from typing import Annotated, List, Tuple, Union, Literal
+from typing_extensions import TypedDict
+
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_tavily import TavilySearch
+from langchain.agents import create_agent
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+
+tools = [TavilySearch(max_results=3)]
+llm = ChatOpenAI(model="gpt-4o-mini")
+agent_executor = create_agent(model=llm, tools=tools, system_prompt="You are a helpful assistant.")
+
+
+class PlanExecute(TypedDict):
+    input: str
+    plan: List[str]
+    past_steps: Annotated[List[Tuple], operator.add]
+    response: str
+
+
+class Plan(BaseModel):
+    """Plan to follow in future"""
+    steps: List[str] = Field(description="different steps to follow, should be in sorted order")
+
+
+planner_prompt = ChatPromptTemplate.from_messages([
+    ("system",
+     "For the given objective, come up with a simple step by step plan. "
+     "Do not add any superfluous steps. The result of the final step should be the final answer. "
+     "Make sure that each step has all the information needed - do not skip steps."),
+    ("placeholder", "{messages}"),
+])
+planner = planner_prompt | ChatOpenAI(model="gpt-4o", temperature=0).with_structured_output(Plan)
+
+
+class Response(BaseModel):
+    """Response to user."""
+    response: str
+
+
+class Act(BaseModel):
+    """Action to perform."""
+    action: Union[Response, Plan] = Field(
+        description="Response to answer the user, or Plan if more steps are needed."
+    )
+
+
+replanner_prompt = ChatPromptTemplate.from_template(
+    "Your objective was this:\\n{input}\\n\\n"
+    "Your original plan was this:\\n{plan}\\n\\n"
+    "You have currently done the follow steps:\\n{past_steps}\\n\\n"
+    "Update your plan accordingly. If no more steps are needed, respond with that. "
+    "Otherwise, fill out the plan with only the steps that still need doing."
+)
+replanner = replanner_prompt | ChatOpenAI(model="gpt-4o", temperature=0).with_structured_output(Act)
+
+
+async def plan_step(state: PlanExecute):
+    plan = await planner.ainvoke({"messages": [("user", state["input"])]})
+    return {"plan": plan.steps}
+
+
+async def execute_step(state: PlanExecute):
+    plan = state["plan"]
+    plan_str = "\\n".join(f"{i + 1}. {step}" for i, step in enumerate(plan))
+    task = plan[0]
+    task_formatted = f"For the following plan:\\n{plan_str}\\n\\nYou are tasked with executing step 1, {task}."
+    agent_response = await agent_executor.ainvoke({"messages": [("user", task_formatted)]})
+    return {"past_steps": [(task, agent_response["messages"][-1].content)]}
+
+
+async def replan_step(state: PlanExecute):
+    output = await replanner.ainvoke(state)
+    if isinstance(output.action, Response):
+        return {"response": output.action.response}
+    return {"plan": output.action.steps}
+
+
+def should_end(state: PlanExecute) -> Literal["agent", "__end__"]:
+    return END if state.get("response") else "agent"
+
+
+workflow = StateGraph(PlanExecute)
+workflow.add_node("planner", plan_step)
+workflow.add_node("agent", execute_step)
+workflow.add_node("replan", replan_step)
+workflow.add_edge(START, "planner")
+workflow.add_edge("planner", "agent")
+workflow.add_edge("agent", "replan")
+workflow.add_conditional_edges("replan", should_end, {"agent": "agent", END: END})
+
+app = workflow.compile(checkpointer=InMemorySaver())
+
+import asyncio
+
+async def main():
+    config = {"configurable": {"thread_id": "plan-exec-demo"}, "recursion_limit": 50}
+    inputs = {"input": "2024년 남자 호주오픈 우승자의 고향은 어디인가?"}
+    async for event in app.astream(inputs, config=config):
+        for node_name, value in event.items():
+            if node_name != "__end__":
+                print(f"[{node_name}] {value}")
+
+asyncio.run(main())`;
+
+CODE["code-rewoo"] = `# pip install -U langgraph langchain-core langchain-openai langchain-tavily
+import operator, re
+from typing import Annotated, List, Literal
+from typing_extensions import TypedDict
+from pydantic import BaseModel, Field
+
+from langchain_openai import ChatOpenAI
+from langchain_tavily import TavilySearch
+from langchain_core.prompts import ChatPromptTemplate
+from langgraph.graph import StateGraph, START, END
+from langgraph.types import Send
+
+
+class PlanStep(BaseModel):
+    reasoning: str = Field(description="Why this step is needed.")
+    variable: str = Field(description="The evidence variable this step writes, e.g. '#E1'.")
+    tool: Literal["Google", "LLM"] = Field(description="Which worker tool to call.")
+    tool_input: str = Field(description="Argument to the tool. May reference earlier variables.")
+
+
+class Plan(BaseModel):
+    steps: List[PlanStep]
+
+
+class ReWOOState(TypedDict):
+    task: str
+    plan: Plan
+    results: Annotated[dict, operator.or_]   # 병렬 워커가 함께 쓰는 dict -> 병합 리듀서 필수
+    result: str
+
+
+model = ChatOpenAI(model="gpt-4o", temperature=0)
+planner = (
+    ChatPromptTemplate.from_messages([
+        ("system",
+         "You are a planning agent. Produce a step-by-step plan. Each step calls exactly one tool "
+         "and may reference an earlier step's variable (e.g. '#E1') inside tool_input.\\n"
+         "Tools:\\n- Google[query]: web search.\\n- LLM[instruction]: reason over prior evidence."),
+        ("user", "Task: {task}"),
+    ])
+    | model.with_structured_output(Plan)
+)
+
+search_tool = TavilySearch(max_results=3)
+VAR_RE = re.compile(r"#E\\d+")
+
+
+def _substitute(text: str, results: dict) -> str:
+    for var, value in results.items():
+        text = text.replace(var, str(value))
+    return text
+
+
+def _ready_steps(plan: Plan, results: dict) -> List[PlanStep]:
+    ready = []
+    for step in plan.steps:
+        if step.variable in results:
+            continue
+        deps = VAR_RE.findall(step.tool_input)
+        if all(d in results for d in deps):
+            ready.append(step)
+    return ready
+
+
+def plan_step(state: ReWOOState) -> dict:
+    plan = planner.invoke({"task": state["task"]})
+    return {"plan": plan, "results": {}}
+
+
+def route_after_plan(state: ReWOOState):
+    ready = _ready_steps(state["plan"], state["results"])
+    if not ready:
+        return "solve"
+    return [Send("run_tool", {"step": s, "results": state["results"]}) for s in ready]
+
+
+def run_tool(state: dict) -> dict:
+    step = state["step"]
+    tool_input = _substitute(step.tool_input, state["results"])
+    if step.tool == "Google":
+        observation = search_tool.invoke(tool_input)
+    else:
+        observation = model.invoke(tool_input).content
+    return {"results": {step.variable: str(observation)}}
+
+
+def route_after_tool(state: ReWOOState):
+    ready = _ready_steps(state["plan"], state["results"])
+    if ready:
+        return [Send("run_tool", {"step": s, "results": state["results"]}) for s in ready]
+    return "solve"
+
+
+def solve(state: ReWOOState) -> dict:
+    lines = []
+    for step in state["plan"].steps:
+        evidence = state["results"].get(step.variable, "")
+        lines.append(f"Plan: {step.reasoning}\\n{step.variable} = {step.tool}[{step.tool_input}] -> {evidence}")
+    prompt = (
+        "Solve the task using the plan and evidence below.\\n\\n" + "\\n".join(lines) +
+        f"\\n\\nTask: {state['task']}\\nRespond with only the final answer."
+    )
+    return {"result": model.invoke(prompt).content}
+
+
+builder = StateGraph(ReWOOState)
+builder.add_node("plan", plan_step)
+builder.add_node("run_tool", run_tool)
+builder.add_node("solve", solve)
+builder.add_edge(START, "plan")
+builder.add_conditional_edges("plan", route_after_plan, ["run_tool", "solve"])
+builder.add_conditional_edges("run_tool", route_after_tool, ["run_tool", "solve"])
+builder.add_edge("solve", END)
+
+app = builder.compile()
+
+if __name__ == "__main__":
+    result = app.invoke({"task": "2024년 호주오픈 남자 단식 우승자의 정확한 고향은 어디인가?"})
+    print(result["result"])`;
+
+CODE["code-reflexion"] = `# pip install -U langgraph langchain-core langchain-anthropic langchain-tavily
+import datetime
+from typing import Annotated, List, Literal
+from typing_extensions import TypedDict
+from pydantic import BaseModel, Field, ValidationError
+
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import ToolMessage
+from langchain_core.output_parsers.openai_tools import PydanticToolsParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.tools import StructuredTool
+from langchain_tavily import TavilySearch
+
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode
+
+
+class State(TypedDict):
+    messages: Annotated[list, add_messages]
+
+
+MAX_ITERATIONS = 3  # 개정(revise) 횟수 상한 -- 명시적으로 명명해 헷갈리지 않게 한다
+
+llm = ChatAnthropic(model="claude-sonnet-5", temperature=0)  # 배포 전 최신 모델 ID 확인
+tavily_tool = TavilySearch(max_results=5)
+
+
+class Reflection(BaseModel):
+    missing: str = Field(description="Critique of what important information is missing.")
+    superfluous: str = Field(description="Critique of what is superfluous or irrelevant.")
+
+
+class AnswerQuestion(BaseModel):
+    """Answer the question, then critique your own answer and propose searches to improve it."""
+    answer: str = Field(description="~250 word detailed answer to the question.")
+    reflection: Reflection
+    search_queries: List[str] = Field(description="1-3 search queries to address the critique.")
+
+
+class ReviseAnswer(AnswerQuestion):
+    """Revise the previous answer using new search results, citing sources."""
+    references: List[str] = Field(description="URLs that support the revised answer.")
+
+
+actor_prompt = ChatPromptTemplate.from_messages([
+    ("system",
+     "You are an expert researcher.\\nCurrent time: {time}\\n\\n"
+     "1. {first_instruction}\\n2. Reflect and critique your answer. Be severe.\\n"
+     "3. Recommend search queries to improve your answer."),
+    MessagesPlaceholder(variable_name="messages"),
+    ("user", "Reflect on the question and actions so far. Respond using the {function_name} function."),
+]).partial(time=lambda: datetime.datetime.now().isoformat())
+
+initial_chain = actor_prompt.partial(
+    first_instruction="Provide a detailed ~250 word answer.",
+    function_name=AnswerQuestion.__name__,
+) | llm.bind_tools(tools=[AnswerQuestion])
+
+revise_instructions = (
+    "Revise your previous answer using the new information. Use numeric citations [1],[2]... "
+    "and add a References section. Keep it under 250 words."
+)
+revision_chain = actor_prompt.partial(
+    first_instruction=revise_instructions,
+    function_name=ReviseAnswer.__name__,
+) | llm.bind_tools(tools=[ReviseAnswer])
+
+
+class ResponderWithRetries:
+    """공식 노트북의 버그(dict + list -> TypeError)를 수정한 버전:
+    state를 항상 올바른 {"messages": [...]} dict로 유지한다."""
+
+    def __init__(self, runnable, validator):
+        self.runnable = runnable
+        self.validator = validator
+
+    def respond(self, state: State) -> dict:
+        response = None
+        local_messages = state["messages"]
+        for _ in range(3):
+            response = self.runnable.invoke({"messages": local_messages})
+            try:
+                self.validator.invoke(response)
+                return {"messages": [response]}
+            except ValidationError as e:
+                local_messages = local_messages + [
+                    response,
+                    ToolMessage(
+                        content=f"{repr(e)}\\n\\nFix all validation errors and respond again.",
+                        tool_call_id=response.tool_calls[0]["id"],
+                    ),
+                ]
+        return {"messages": [response]}
+
+
+first_responder = ResponderWithRetries(initial_chain, PydanticToolsParser(tools=[AnswerQuestion]))
+revisor = ResponderWithRetries(revision_chain, PydanticToolsParser(tools=[ReviseAnswer]))
+
+
+def run_queries(search_queries: List[str], **kwargs) -> list:
+    return tavily_tool.batch([{"query": q} for q in search_queries])
+
+
+tool_node = ToolNode([
+    StructuredTool.from_function(run_queries, name=AnswerQuestion.__name__),
+    StructuredTool.from_function(run_queries, name=ReviseAnswer.__name__),
+])
+
+
+def num_revisions(messages: list) -> int:
+    i = 0
+    for m in reversed(messages):
+        if m.type not in ("tool", "ai"):
+            break
+        i += 1
+    return i // 2  # (ai, tool) 한 쌍 = 개정 1회
+
+
+def event_loop(state: State) -> Literal["execute_tools", "__end__"]:
+    if num_revisions(state["messages"]) >= MAX_ITERATIONS:
+        return END
+    return "execute_tools"
+
+
+builder = StateGraph(State)
+builder.add_node("draft", first_responder.respond)
+builder.add_node("execute_tools", tool_node)
+builder.add_node("revise", revisor.respond)
+builder.add_edge(START, "draft")
+builder.add_edge("draft", "execute_tools")
+builder.add_edge("execute_tools", "revise")
+builder.add_conditional_edges("revise", event_loop, ["execute_tools", END])
+
+graph = builder.compile()
+
+if __name__ == "__main__":
+    events = graph.stream(
+        {"messages": [("user", "기후 위기에 우리는 어떻게 대응해야 하는가?")]},
+        stream_mode="values",
+    )
+    for i, step in enumerate(events):
+        print(f"--- step {i} ---")
+        step["messages"][-1].pretty_print()`;
+
+CODE["code-lats"] = `# pip install -U langgraph langchain-core langchain
+from __future__ import annotations
+import math
+from typing import Optional
+from typing_extensions import Annotated, TypedDict
+import operator
+
+from pydantic import BaseModel, Field
+from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import tool
+from langchain.chat_models import init_chat_model
+
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.types import Send
+
+
+@tool
+def search(query: str) -> str:
+    """Search the web for information relevant to the query."""
+    return f"[search results for: {query}] ... (실제 검색 도구로 교체)"
+
+
+TOOLS = [search]
+TOOLS_BY_NAME = {t.name: t for t in TOOLS}
+llm = init_chat_model("claude-sonnet-5", temperature=0.7)
+
+
+def run_tools(ai_message: AIMessage) -> list[ToolMessage]:
+    outputs = []
+    for call in ai_message.tool_calls:
+        result = TOOLS_BY_NAME[call["name"]].invoke(call["args"])
+        outputs.append(ToolMessage(content=str(result), name=call["name"], tool_call_id=call["id"]))
+    return outputs
+
+
+class Reflection(BaseModel):
+    reflections: str = Field(description="Critique of correctness, completeness, quality.")
+    score: int = Field(description="0-10 quality score.", ge=0, le=10)
+    found_solution: bool = Field(description="True only if fully and correctly solved.")
+
+    @property
+    def normalized_score(self) -> float:
+        return self.score / 10.0
+
+
+reflection_llm = ChatPromptTemplate.from_messages([
+    ("system", "You are a strict grader. Only set found_solution=True if fully correct and supported."),
+    ("user", "{input}"),
+    MessagesPlaceholder("candidate"),
+]) | llm.with_structured_output(Reflection)
+
+
+def reflect(input_: str, candidate_messages: list[BaseMessage]) -> Reflection:
+    r = reflection_llm.invoke({"input": input_, "candidate": candidate_messages})
+    if not isinstance(candidate_messages[-1], AIMessage):
+        r.found_solution = False
+    return r
+
+
+class Node:
+    def __init__(self, messages, reflection: Reflection, parent: Optional["Node"] = None):
+        self.messages = messages
+        self.parent = parent
+        self.children: list["Node"] = []
+        self.value = 0.0
+        self.visits = 0
+        self.reflection = reflection
+        self.depth = parent.depth + 1 if parent else 1
+        self._is_solved = reflection.found_solution
+        if self._is_solved:
+            self._mark_tree_as_solved()
+        self.backpropagate(reflection.normalized_score)
+
+    @property
+    def is_solved(self) -> bool:
+        return self._is_solved
+
+    @property
+    def height(self) -> int:
+        return self.depth if not self.children else max(c.height for c in self.children)
+
+    def upper_confidence_bound(self, exploration_weight: float = 1.0) -> float:
+        if self.parent is None:
+            raise ValueError("UCT is undefined for the root node")
+        if self.visits == 0:
+            return self.value
+        avg_reward = self.value / self.visits
+        exploration = math.sqrt(math.log(self.parent.visits) / self.visits)
+        return avg_reward + exploration_weight * exploration
+
+    def backpropagate(self, reward: float) -> None:
+        node = self
+        while node:
+            node.visits += 1
+            node.value = (node.value * (node.visits - 1) + reward) / node.visits
+            node = node.parent
+
+    def _mark_tree_as_solved(self) -> None:
+        node = self
+        while node:
+            node._is_solved = True
+            node = node.parent
+
+    def best_child(self) -> Optional["Node"]:
+        if not self.children:
+            return None
+        return max(self.children, key=lambda c: c.upper_confidence_bound())
+
+    def select_leaf(self) -> "Node":
+        node = self
+        while node.children:
+            node = node.best_child()
+        return node
+
+    def get_trajectory(self, include_reflections: bool = True) -> list:
+        chain = []
+        node = self
+        while node:
+            chain.append(node)
+            node = node.parent
+        messages = []
+        for n in reversed(chain):
+            messages.extend(n.messages)
+        return messages
+
+
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", "You are a careful research assistant. Use the search tool as needed, then give a clear final answer."),
+    ("user", "{input}"),
+    MessagesPlaceholder("messages", optional=True),
+])
+initial_answer_chain = prompt_template | llm.bind_tools(TOOLS)
+expansion_chain = prompt_template | llm.bind_tools(TOOLS).bind(temperature=0.9)
+
+
+class TreeState(TypedDict):
+    input: str
+    root: Node
+    selected: Node
+    new_children: Annotated[list[tuple], operator.add]
+    iteration: int
+
+
+def initialize(state: TreeState) -> dict:
+    input_ = state["input"]
+    res = initial_answer_chain.invoke({"input": input_})
+    output_messages = [res] + run_tools(res)
+    root = Node(output_messages, reflection=reflect(input_, output_messages))
+    return {"root": root, "selected": root, "new_children": [], "iteration": 0}
+
+
+def select(state: TreeState) -> dict:
+    return {"selected": state["root"].select_leaf()}
+
+
+def route_to_expansion(state: TreeState, config: RunnableConfig) -> list[Send]:
+    n = config["configurable"].get("n_candidates", 4)
+    trajectory = state["selected"].get_trajectory()
+    return [Send("generate_candidate", {"input": state["input"], "trajectory": trajectory}) for _ in range(n)]
+
+
+def generate_candidate(payload: dict) -> dict:
+    """Send로 병렬 실행되는 브랜치. 공유 트리는 절대 건드리지 않는다 -- 트리 변형은 backpropagate에서만."""
+    res = expansion_chain.invoke({"input": payload["input"], "messages": payload["trajectory"]})
+    output_messages = [res] + run_tools(res)
+    return {"new_children": [(output_messages, reflect(payload["input"], output_messages))]}
+
+
+def backpropagate(state: TreeState) -> dict:
+    selected = state["selected"]
+    children = [Node(msgs, reflection=refl, parent=selected) for msgs, refl in state["new_children"]]
+    selected.children.extend(children)
+    return {"new_children": [], "iteration": state["iteration"] + 1}
+
+
+def should_continue(state: TreeState, config: RunnableConfig):
+    root = state["root"]
+    if root.is_solved:
+        return END
+    if state["iteration"] >= config["configurable"].get("max_iterations", 8):
+        return END
+    if root.height >= config["configurable"].get("max_depth", 5):
+        return END
+    return "select"
+
+
+builder = StateGraph(TreeState)
+builder.add_node("initialize", initialize)
+builder.add_node("select", select)
+builder.add_node("generate_candidate", generate_candidate)
+builder.add_node("backpropagate", backpropagate)
+builder.add_edge(START, "initialize")
+builder.add_conditional_edges("initialize", should_continue)
+builder.add_conditional_edges("select", route_to_expansion, ["generate_candidate"])
+builder.add_edge("generate_candidate", "backpropagate")
+builder.add_conditional_edges("backpropagate", should_continue)
+
+graph = builder.compile(checkpointer=InMemorySaver())
+
+if __name__ == "__main__":
+    final_state = graph.invoke(
+        {"input": "최근 5명의 노벨 물리학상 수상자 중, 같은 시기에 필즈상 수상자도 배출한 나라 출신은 누구이며 어떤 발견이었나?"},
+        config={
+            "recursion_limit": 100,
+            "configurable": {"n_candidates": 4, "max_iterations": 8, "max_depth": 5, "thread_id": "lats-demo-1"},
+        },
+    )
+    best = max(final_state["root"]._flatten() if hasattr(final_state["root"], "_flatten") else [final_state["root"]],
+               key=lambda n: (n.is_solved, n.value))
+    print("Solved:", best.is_solved, "| score:", best.value)`;
+
+CODE["code-tot"] = `# pip install -U langgraph langchain
+from __future__ import annotations
+from typing import Callable, Optional
+from typing_extensions import TypedDict
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
+from langchain.chat_models import init_chat_model
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+
+llm = init_chat_model("claude-sonnet-5", temperature=1.0)  # 다양한 제안을 위해 높은 temperature
+
+
+class ThoughtNode:
+    def __init__(self, numbers, expr_trail, parent=None, op_desc=""):
+        self.numbers = numbers
+        self.expr_trail = expr_trail
+        self.parent = parent
+        self.children: list["ThoughtNode"] = []
+        self.op_desc = op_desc
+        self.depth = parent.depth + 1 if parent else 0
+        self.value = 0.0
+        self.is_solution = len(numbers) == 1 and abs(numbers[0] - 24) < 1e-6
+
+    def trajectory(self) -> list[str]:
+        chain, node = [], self
+        while node:
+            chain.append(node)
+            node = node.parent
+        return [n.op_desc for n in reversed(chain) if n.op_desc]
+
+
+def _pop_close(numbers, target, tol=1e-6):
+    remaining = list(numbers)
+    for i, v in enumerate(remaining):
+        if abs(v - target) < tol:
+            del remaining[i]
+            return remaining
+    raise ValueError(f"{target} not found in {numbers}")
+
+
+OPS: dict[str, Callable] = {
+    "+": lambda a, b: a + b, "-": lambda a, b: a - b,
+    "*": lambda a, b: a * b, "/": lambda a, b: (a / b) if abs(b) > 1e-9 else None,
+}
+
+
+class Proposal(BaseModel):
+    a: float
+    b: float
+    op: str = Field(description="One of '+', '-', '*', '/'.")
+    rationale: str
+
+
+class ProposalList(BaseModel):
+    proposals: list[Proposal]
+
+
+class Evaluation(BaseModel):
+    verdict: str = Field(description="sure, likely, or impossible.")
+
+
+VERDICT_SCORE = {"sure": 1.0, "likely": 0.5, "impossible": 0.0}
+
+propose_chain = ChatPromptTemplate.from_messages([
+    ("system", "Game of 24: combine two remaining numbers with +,-,*,/ so all numbers eventually reach 24. "
+               "Propose several diverse next steps."),
+    ("user", "Remaining: {numbers}\\nSteps so far: {trail}\\nPropose {n} diverse next steps."),
+]) | llm.with_structured_output(ProposalList)
+
+evaluate_chain = ChatPromptTemplate.from_messages([
+    ("system", "Judge if this Game-of-24 state can still reach 24 using all remaining numbers exactly once."),
+    ("user", "Remaining numbers: {numbers}"),
+]) | llm.with_structured_output(Evaluation)
+
+
+class ToTState(TypedDict):
+    numbers: list[float]
+    frontier: list[ThoughtNode]
+    candidates: list[ThoughtNode]
+    evaluated: list[ThoughtNode]
+    solved_node: Optional[ThoughtNode]
+    depth: int
+
+
+def initialize(state: ToTState) -> dict:
+    root = ThoughtNode(numbers=state["numbers"], expr_trail=[])
+    root.value = 1.0
+    return {"frontier": [root], "candidates": [], "evaluated": [], "solved_node": None, "depth": 0}
+
+
+def expand(state: ToTState, config: RunnableConfig) -> dict:
+    n = config["configurable"].get("n_proposals_per_node", 5)
+    new_nodes = []
+    for node in state["frontier"]:
+        if len(node.numbers) == 1:
+            continue
+        result = propose_chain.invoke({
+            "numbers": node.numbers, "trail": " -> ".join(node.trajectory()) or "(none)", "n": n,
+        })
+        for p in result.proposals:
+            fn = OPS.get(p.op)
+            if fn is None:
+                continue
+            computed = fn(p.a, p.b)
+            if computed is None:
+                continue
+            try:
+                remaining = _pop_close(_pop_close(node.numbers, p.a), p.b)
+            except ValueError:
+                continue
+            remaining.append(computed)
+            desc = f"{p.a} {p.op} {p.b} = {computed:g}"
+            child = ThoughtNode(remaining, node.expr_trail + [desc], parent=node, op_desc=desc)
+            node.children.append(child)
+            new_nodes.append(child)
+    return {"candidates": new_nodes}
+
+
+def evaluate(state: ToTState) -> dict:
+    solved, evaluated = None, []
+    for node in state["candidates"]:
+        if len(node.numbers) == 1:
+            if abs(node.numbers[0] - 24) < 1e-6:
+                node.value, node.is_solution = 1.0, True
+                solved = solved or node
+            else:
+                node.value = 0.0  # 확실한 막다른 길 -- LLM에 묻지 않고 결정적으로 판정
+        else:
+            verdict = evaluate_chain.invoke({"numbers": node.numbers}).verdict
+            node.value = VERDICT_SCORE.get(verdict, 0.0)
+        evaluated.append(node)
+    return {"evaluated": evaluated, "solved_node": solved}
+
+
+def prune(state: ToTState, config: RunnableConfig) -> dict:
+    b = config["configurable"].get("breadth_limit", 5)
+    survivors = sorted(state["evaluated"], key=lambda n: n.value, reverse=True)[:b]
+    return {"frontier": survivors, "candidates": [], "evaluated": [], "depth": state["depth"] + 1}
+
+
+def should_continue(state: ToTState, config: RunnableConfig):
+    if state.get("solved_node") is not None:
+        return END
+    if state["depth"] >= config["configurable"].get("max_depth", 3):
+        return END
+    if not state["frontier"]:
+        return END
+    return "expand"
+
+
+builder = StateGraph(ToTState)
+builder.add_node("initialize", initialize)
+builder.add_node("expand", expand)
+builder.add_node("evaluate", evaluate)
+builder.add_node("prune", prune)
+builder.add_edge(START, "initialize")
+builder.add_edge("initialize", "expand")
+builder.add_edge("expand", "evaluate")
+builder.add_edge("evaluate", "prune")
+builder.add_conditional_edges("prune", should_continue)
+
+tot_graph = builder.compile(checkpointer=InMemorySaver())
+
+if __name__ == "__main__":
+    result = tot_graph.invoke(
+        {"numbers": [4, 9, 10, 13]},
+        config={"recursion_limit": 50, "configurable": {"breadth_limit": 5, "max_depth": 3, "thread_id": "tot-24"}},
+    )
+    if result.get("solved_node") is not None:
+        print("Solved:", " -> ".join(result["solved_node"].trajectory()))
+    else:
+        print("No exact solution within budget.")`;
+
+CODE["code-selfask"] = `# pip install -U langgraph langchain "langchain[openai]"
+import operator
+from typing import Annotated, Literal, Optional
+from typing_extensions import TypedDict
+from pydantic import BaseModel, Field
+from langchain.chat_models import init_chat_model
+from langgraph.graph import StateGraph, START, END
+
+
+def search_engine(query: str) -> str:
+    """실제로는 langchain_tavily.TavilySearch 등 진짜 검색 도구로 교체."""
+    return f"[search result for: {query}]"
+
+
+class SelfAskState(TypedDict):
+    question: str
+    followups: Annotated[list[tuple[str, str]], operator.add]
+    need_followup: bool
+    current_followup: Optional[str]
+    final_answer: Optional[str]
+    hop: int
+
+
+MAX_HOPS = 4
+
+
+class SelfAskDecision(BaseModel):
+    need_followup: bool
+    follow_up_question: Optional[str] = None
+    final_answer: Optional[str] = None
+
+
+llm = init_chat_model("openai:gpt-4o-mini", temperature=0)
+decider = llm.with_structured_output(SelfAskDecision)
+
+SYSTEM = """You answer complex questions using the self-ask method.
+Decide whether another follow-up question is needed before answering.
+Never re-ask a follow-up whose answer is already in the history."""
+
+
+def format_history(state: SelfAskState) -> str:
+    lines = [f"Question: {state['question']}"]
+    for q, a in state["followups"]:
+        lines += [f"Follow up: {q}", f"Intermediate answer: {a}"]
+    return "\\n".join(lines)
+
+
+def reason(state: SelfAskState) -> dict:
+    d = decider.invoke([("system", SYSTEM), ("human", format_history(state))])
+    return {"need_followup": d.need_followup, "current_followup": d.follow_up_question, "final_answer": d.final_answer}
+
+
+def search_followup(state: SelfAskState) -> dict:
+    q = state["current_followup"]
+    return {"followups": [(q, search_engine(q))], "hop": state["hop"] + 1}
+
+
+def finish(state: SelfAskState) -> dict:
+    if state["final_answer"]:
+        return {}
+    forced = llm.invoke([("system", "Give the best short final answer given the info so far."), ("human", format_history(state))])
+    return {"final_answer": forced.content}
+
+
+def route(state: SelfAskState) -> Literal["search_followup", "finish"]:
+    if state["need_followup"] and state["hop"] < MAX_HOPS:
+        return "search_followup"
+    return "finish"
+
+
+builder = StateGraph(SelfAskState)
+builder.add_node("reason", reason)
+builder.add_node("search_followup", search_followup)
+builder.add_node("finish", finish)
+builder.add_edge(START, "reason")
+builder.add_conditional_edges("reason", route, {"search_followup": "search_followup", "finish": "finish"})
+builder.add_edge("search_followup", "reason")
+builder.add_edge("finish", END)
+
+graph = builder.compile()
+
+if __name__ == "__main__":
+    result = graph.invoke({
+        "question": "봉준호 감독이 태어난 도시의 인구는 몇 명인가?",
+        "followups": [], "need_followup": True, "current_followup": None,
+        "final_answer": None, "hop": 0,
+    }, config={"recursion_limit": 25})
+    for q, a in result["followups"]:
+        print(f"  Q: {q}\\n  A: {a}")
+    print("Final answer:", result["final_answer"])`;
+
+CODE["code-adapt"] = `# pip install -U langgraph langchain "langchain[openai]"
+import operator
+from typing import Annotated, Literal, Optional
+from typing_extensions import TypedDict
+from pydantic import BaseModel, Field
+from langchain.chat_models import init_chat_model
+from langchain_core.tools import tool
+from langgraph.graph import StateGraph, START, END
+
+
+@tool
+def set_device(device: str, state: str) -> str:
+    """Set a smart-home device to a given state."""
+    return f"OK: {device} is now set to '{state}'." if device.lower() in {"lights", "tv"} else f"ERROR: unknown device '{device}'."
+
+
+@tool
+def order_item(item: str, when: str) -> str:
+    """Order an item for delivery by a given time."""
+    return f"OK: ordered {item}, arriving {when}." if "popcorn" in item.lower() else f"ERROR: could not find '{item}'."
+
+
+TOOLS = [set_device, order_item]
+TOOL_BY_NAME = {t.name: t for t in TOOLS}
+
+
+class Frame(TypedDict):
+    kind: Literal["task", "join"]
+    task_id: str
+    description: str
+    depth: int
+    logic: Optional[Literal["AND", "OR"]]
+    child_ids: Optional[list[str]]
+    context: str
+
+
+class ADaPTState(TypedDict):
+    root_task: str
+    stack: list[Frame]
+    results: dict[str, bool]
+    trace: Annotated[list[str], operator.add]
+    max_depth: int
+
+
+executor_llm = init_chat_model("openai:gpt-4o-mini", temperature=0).bind_tools(TOOLS)
+EXECUTOR_SYSTEM = """You are the Executor. Call at most ONE tool to attempt the task directly if it's
+concrete and atomic. If too complex, don't call a tool. End with TASK_COMPLETED: <reason> or TASK_FAILED: <reason>."""
+
+
+class PlannerResult(BaseModel):
+    logic: Literal["AND", "OR"]
+    subtasks: list[str] = Field(description="3 to 5 concrete subtasks.")
+
+
+planner_llm = init_chat_model("openai:gpt-4o-mini", temperature=0).with_structured_output(PlannerResult)
+PLANNER_SYSTEM = """A task failed because it was too complex. Decompose it into 3-5 concrete subtasks.
+AND if all must succeed (sequential), OR if alternatives (any one suffices)."""
+
+
+def execute_task(state: ADaPTState) -> dict:
+    stack = list(state["stack"])
+    frame = stack.pop()
+    task_id, desc, depth, context = frame["task_id"], frame["description"], frame["depth"], frame["context"]
+
+    msg = executor_llm.invoke([("system", EXECUTOR_SYSTEM), ("human", f"Task: {desc}\\nContext: {context or '(none)'}")])
+
+    if msg.tool_calls:
+        call = msg.tool_calls[0]
+        tool_result = TOOL_BY_NAME[call["name"]].invoke(call["args"])
+        success, reason = tool_result.startswith("OK"), f"{call['name']}({call['args']}) -> {tool_result}"
+    else:
+        text = msg.content or ""
+        success, reason = "TASK_COMPLETED" in text.upper(), text.strip()
+
+    indent = "  " * depth
+    trace_line = f"{indent}[depth {depth}] EXECUTE '{desc}' -> {'SUCCESS' if success else 'FAIL'} ({reason})"
+
+    if success:
+        return {"stack": stack, "results": {**state["results"], task_id: True}, "trace": [trace_line]}
+
+    if depth >= state["max_depth"]:
+        # 원 논문 Algorithm 1: "if k > dmax: return False" -- 폴백 없이 그대로 포기
+        return {"stack": stack, "results": {**state["results"], task_id: False}, "trace": [trace_line + "  [max depth, giving up]"]}
+
+    plan = planner_llm.invoke([("system", PLANNER_SYSTEM), ("human", f"Task: {desc}\\nFailure: {reason}")])
+
+    child_frames, child_ids = [], []
+    for i, sub in enumerate(plan.subtasks, start=1):
+        cid = f"{task_id}.{i}"
+        child_ids.append(cid)
+        child_frames.append({"kind": "task", "task_id": cid, "description": sub, "depth": depth + 1,
+                              "logic": None, "child_ids": None, "context": reason})
+
+    join_frame: Frame = {"kind": "join", "task_id": task_id, "description": "", "depth": depth,
+                          "logic": plan.logic, "child_ids": child_ids, "context": ""}
+
+    # join을 먼저 push하고 자식을 그 위에 push -> LIFO로 첫 자식부터 팝됨(올바른 후위 순회)
+    new_stack = stack + [join_frame] + list(reversed(child_frames))
+    trace_line += f"  [decomposed ({plan.logic}) into {child_ids}]"
+    return {"stack": new_stack, "trace": [trace_line]}
+
+
+def join_results(state: ADaPTState) -> dict:
+    stack = list(state["stack"])
+    frame = stack.pop()
+    task_id, logic, child_ids, depth = frame["task_id"], frame["logic"], frame["child_ids"], frame["depth"]
+    child_results = [state["results"][cid] for cid in child_ids]
+    success = all(child_results) if logic == "AND" else any(child_results)
+    trace_line = f"{'  ' * depth}[depth {depth}] JOIN '{task_id}' ({logic}={child_results}) -> {'SUCCESS' if success else 'FAIL'}"
+    return {"stack": stack, "results": {**state["results"], task_id: success}, "trace": [trace_line]}
+
+
+def finalize(state: ADaPTState) -> dict:
+    root_success = state["results"].get("T0", False)
+    return {"trace": [f"ROOT TASK {'SUCCEEDED' if root_success else 'FAILED'}"]}
+
+
+def route_top(state: ADaPTState) -> Literal["execute_task", "join_results", "finalize"]:
+    if not state["stack"]:
+        return "finalize"
+    return "execute_task" if state["stack"][-1]["kind"] == "task" else "join_results"
+
+
+builder = StateGraph(ADaPTState)
+builder.add_node("execute_task", execute_task)
+builder.add_node("join_results", join_results)
+builder.add_node("finalize", finalize)
+_route_map = {"execute_task": "execute_task", "join_results": "join_results", "finalize": "finalize"}
+builder.add_conditional_edges(START, route_top, _route_map)
+builder.add_conditional_edges("execute_task", route_top, _route_map)
+builder.add_conditional_edges("join_results", route_top, _route_map)
+builder.add_edge("finalize", END)
+
+graph = builder.compile()
+
+if __name__ == "__main__":
+    root_desc = "영화 감상을 위해 거실을 준비해줘: 조명을 어둡게 하고, TV를 넷플릭스로 켜고, 30분 뒤 도착하도록 팝콘을 주문해줘."
+    initial_state: ADaPTState = {
+        "root_task": root_desc,
+        "stack": [{"kind": "task", "task_id": "T0", "description": root_desc, "depth": 0,
+                   "logic": None, "child_ids": None, "context": ""}],
+        "results": {}, "trace": [], "max_depth": 3,
+    }
+    result = graph.invoke(initial_state, config={"recursion_limit": 100})
+    print("\\n".join(result["trace"]))
+    print("Root success:", result["results"].get("T0"))`;
+
+CODE["code-codeact"] = `# pip install -U langgraph-codeact langchain
+import builtins, contextlib, io, math
+from typing import Any
+
+from langchain.chat_models import init_chat_model
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph_codeact import create_codeact
+
+
+def eval_fn(code: str, _locals: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    original_keys = set(_locals.keys())
+    try:
+        with contextlib.redirect_stdout(io.StringIO()) as f:
+            exec(code, builtins.__dict__, _locals)   # 데모 전용 -- 신뢰 불가 코드엔 격리 샌드박스 사용
+        result = f.getvalue() or "<code ran, no output printed to stdout>"
+    except Exception as e:
+        result = f"Error during execution: {repr(e)}"
+    new_vars = {k: _locals[k] for k in set(_locals.keys()) - original_keys}
+    return result, new_vars
+
+
+def add(a: float, b: float) -> float:
+    """Add two numbers together."""
+    return a + b
+
+
+def multiply(a: float, b: float) -> float:
+    """Multiply two numbers together."""
+    return a * b
+
+
+def sqrt(a: float) -> float:
+    """Take the square root of a number."""
+    return math.sqrt(a)
+
+
+tools = [add, multiply, sqrt]
+model = init_chat_model("anthropic:claude-sonnet-5")  # 배포 전 최신 모델 ID 확인
+
+code_act = create_codeact(model, tools, eval_fn)
+agent = code_act.compile(checkpointer=InMemorySaver())
+
+if __name__ == "__main__":
+    messages = [{"role": "user", "content": "3.5의 제곱근에 12를 곱한 값을 계산해줘."}]
+    for typ, chunk in agent.stream(
+        {"messages": messages},
+        stream_mode=["values", "messages"],
+        config={"configurable": {"thread_id": 1}},
+    ):
+        if typ == "messages":
+            print(chunk[0].content, end="")
+        elif typ == "values":
+            print("\\n\\n---answer---\\n\\n", chunk)
+
+
+# --- create_codeact가 내부적으로 만드는 그래프 (langgraph_codeact 소스 요약) ---
+# class CodeActState(MessagesState):
+#     script: Optional[str]       # 가장 최근 추출된 코드
+#     context: dict[str, Any]     # 누적 변수 + 도구 함수 (턴을 넘어 유지되는 인터프리터 상태)
+#
+# def call_model(state) -> Command:
+#     response = model.invoke([{"role": "system", "content": prompt}] + state["messages"])
+#     code = extract_and_combine_codeblocks(response.content)
+#     if code:
+#         return Command(goto="sandbox", update={"messages": [response], "script": code})
+#     return Command(update={"messages": [response], "script": None})   # 코드 없으면 그대로 종료
+#
+# def sandbox(state):
+#     context = {**state.get("context", {}), **tools_context}
+#     output, new_vars = eval_fn(state["script"], context)
+#     return {"messages": [{"role": "user", "content": output}], "context": {**context, **new_vars}}
+#
+# agent.add_edge(START, "call_model")
+# agent.add_edge("sandbox", "call_model")   # sandbox -> call_model 루프`;
+
+CODE["code-voyager"] = `# pip install -U langgraph langchain
+import builtins, contextlib, hashlib, io, re, uuid
+from dataclasses import dataclass
+from typing import Annotated, Any, Optional
+from typing_extensions import TypedDict
+from pydantic import BaseModel, Field
+
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import AnyMessage
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
+from langgraph.runtime import Runtime
+from langgraph.store.memory import InMemoryStore
+
+
+class SkillAgentState(TypedDict):
+    messages: Annotated[list[AnyMessage], add_messages]
+    objective: str
+    completed_skills: list[str]
+    current_goal: Optional[str]
+    acceptance_criteria: Optional[str]
+    retrieved_skills: list[dict]
+    code: Optional[str]
+    exec_result: Optional[str]
+    exec_vars: dict[str, Any]
+    verification: Optional[dict]
+    attempts: int
+    max_attempts: int
+    goals_completed: int
+    max_goals: int
+    done: bool
+
+
+@dataclass
+class AgentContext:
+    user_id: str = "default_user"
+
+
+def skill_namespace(user_id: str) -> tuple[str, str]:
+    return ("skills", user_id)
+
+
+class CurriculumDecision(BaseModel):
+    done: bool
+    goal: str
+    acceptance_criteria: str
+
+
+class VerificationResult(BaseModel):
+    success: bool
+    reason: str
+
+
+class SkillMeta(BaseModel):
+    name: str = Field(description="Short snake_case identifier.")
+    description: str = Field(description="One-sentence description, for future retrieval.")
+
+
+MODEL_ID = "anthropic:claude-sonnet-5"  # 배포 전 최신 모델 ID 확인
+
+
+def read_sample_paragraph() -> str:
+    """샘플 텍스트 -- 실제로는 파일 I/O, HTTP 호출 등 진짜 도구로 교체."""
+    return "LangGraph lets you build stateful, multi-actor applications with LLMs."
+
+
+TOOLBOX = {"read_sample_paragraph": read_sample_paragraph}
+
+
+def extract_code_block(text: str) -> Optional[str]:
+    m = re.search(r"\`\`\`(?:python)?\\s*\\n(.*?)\`\`\`", text, re.DOTALL)
+    return m.group(1).strip() if m else None
+
+
+def run_in_sandbox(code: str, namespace: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    original_keys = set(namespace.keys())
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            exec(code, {"__builtins__": builtins.__dict__}, namespace)
+        output = buf.getvalue() or "<no stdout>"
+    except Exception as e:
+        output = f"{buf.getvalue()}\\nError: {repr(e)}"
+    new_vars = {k: v for k, v in namespace.items() if k not in original_keys}
+    return output, new_vars
+
+
+def fake_embed(texts: list[str]) -> list[list[float]]:
+    """오프라인 데모용 결정적 해시 '임베딩'. 실제로는 init_embeddings(...)로 교체."""
+    vectors = []
+    for t in texts:
+        vec = [0.0] * 32
+        for tok in t.lower().split():
+            h = int(hashlib.sha256(tok.encode()).hexdigest(), 16)
+            vec[h % 32] += 1.0
+        norm = sum(v * v for v in vec) ** 0.5 or 1.0
+        vectors.append([v / norm for v in vec])
+    return vectors
+
+
+def propose_goal(state: SkillAgentState, runtime: Runtime[AgentContext]) -> dict:
+    llm = init_chat_model(MODEL_ID).with_structured_output(CurriculumDecision)
+    completed = "\\n".join(f"- {s}" for s in state["completed_skills"]) or "(none yet)"
+    decision = llm.invoke(
+        f"Objective: {state['objective']}\\nMastered skills:\\n{completed}\\n"
+        f"Subtasks done: {state['goals_completed']}/{state['max_goals']}\\n"
+        "Propose the SINGLE next concrete, testable subtask, or set done=true."
+    )
+    if decision.done or state["goals_completed"] >= state["max_goals"]:
+        return {"done": True}
+    return {"current_goal": decision.goal, "acceptance_criteria": decision.acceptance_criteria,
+            "attempts": 0, "code": None, "exec_result": None, "verification": None, "done": False}
+
+
+def route_after_propose(state: SkillAgentState) -> str:
+    return END if state["done"] else "retrieve_skills"
+
+
+def retrieve_skills(state: SkillAgentState, runtime: Runtime[AgentContext]) -> dict:
+    ns = skill_namespace(runtime.context.user_id)
+    results = runtime.store.search(ns, query=state["current_goal"], limit=3)
+    return {"retrieved_skills": [{"name": r.key, "description": r.value["description"], "code": r.value["code"]} for r in results]}
+
+
+def generate_code(state: SkillAgentState, runtime: Runtime[AgentContext]) -> dict:
+    llm = init_chat_model(MODEL_ID)
+    skills_block = "\\n\\n".join(f"# {s['name']}: {s['description']}\\n{s['code']}" for s in state["retrieved_skills"]) or "(none retrieved)"
+    feedback = ""
+    if state.get("verification") and not state["verification"]["success"]:
+        feedback = f"\\nPrevious attempt failed.\\nOutput: {state['exec_result']}\\nReason: {state['verification']['reason']}\\nFix and retry."
+    response = llm.invoke(
+        f"Goal: {state['current_goal']}\\nSuccess criteria: {state['acceptance_criteria']}\\n"
+        f"Reusable skills already defined as functions:\\n{skills_block}\\n{feedback}\\n"
+        "Respond with a single \`\`\`python code block."
+    )
+    return {"code": extract_code_block(response.content) or "", "messages": [response]}
+
+
+def execute_code(state: SkillAgentState, runtime: Runtime[AgentContext]) -> dict:
+    namespace = dict(TOOLBOX)
+    for skill in state.get("retrieved_skills", []):
+        try:
+            exec(skill["code"], {"__builtins__": builtins.__dict__}, namespace)
+        except Exception:
+            pass
+    namespace.update(state.get("exec_vars", {}))
+    output, new_vars = run_in_sandbox(state["code"], namespace)
+    return {"exec_result": output, "exec_vars": {**state.get("exec_vars", {}), **new_vars}, "attempts": state["attempts"] + 1}
+
+
+def self_verify(state: SkillAgentState, runtime: Runtime[AgentContext]) -> dict:
+    llm = init_chat_model(MODEL_ID).with_structured_output(VerificationResult)
+    result = llm.invoke(
+        f"Goal: {state['current_goal']}\\nCriteria: {state['acceptance_criteria']}\\n"
+        f"Code:\\n{state['code']}\\nOutput:\\n{state['exec_result']}\\n"
+        "success=true only if the output clearly meets the criteria with no errors."
+    )
+    return {"verification": {"success": result.success, "reason": result.reason}}
+
+
+def route_after_verify(state: SkillAgentState) -> str:
+    if state["verification"]["success"]:
+        return "save_skill"
+    if state["attempts"] >= state["max_attempts"]:
+        return "propose_goal"   # Voyager처럼 반복 실패 시 이 목표를 포기하고 다음으로
+    return "generate_code"
+
+
+def save_skill(state: SkillAgentState, runtime: Runtime[AgentContext]) -> dict:
+    llm = init_chat_model(MODEL_ID).with_structured_output(SkillMeta)
+    meta = llm.invoke(f"Name and describe this successful skill.\\nGoal: {state['current_goal']}\\nCode:\\n{state['code']}")
+    ns = skill_namespace(runtime.context.user_id)
+    runtime.store.put(ns, f"{meta.name}_{uuid.uuid4().hex[:6]}",
+                       {"description": meta.description, "code": state["code"], "goal": state["current_goal"]})
+    return {"completed_skills": state["completed_skills"] + [f"{meta.name}: {meta.description}"],
+            "goals_completed": state["goals_completed"] + 1}
+
+
+graph = StateGraph(SkillAgentState, context_schema=AgentContext)
+graph.add_node("propose_goal", propose_goal)
+graph.add_node("retrieve_skills", retrieve_skills)
+graph.add_node("generate_code", generate_code)
+graph.add_node("execute_code", execute_code)
+graph.add_node("self_verify", self_verify)
+graph.add_node("save_skill", save_skill)
+graph.add_edge(START, "propose_goal")
+graph.add_conditional_edges("propose_goal", route_after_propose, {END: END, "retrieve_skills": "retrieve_skills"})
+graph.add_edge("retrieve_skills", "generate_code")
+graph.add_edge("generate_code", "execute_code")
+graph.add_edge("execute_code", "self_verify")
+graph.add_conditional_edges("self_verify", route_after_verify,
+    {"save_skill": "save_skill", "generate_code": "generate_code", "propose_goal": "propose_goal"})
+graph.add_edge("save_skill", "propose_goal")
+
+skill_store = InMemoryStore(index={"embed": fake_embed, "dims": 32, "fields": ["description"]})
+app = graph.compile(checkpointer=InMemorySaver(), store=skill_store)
+
+if __name__ == "__main__":
+    initial_state: SkillAgentState = {
+        "messages": [], "objective": "샘플 문단에 대해 단어 빈도 계산, 문장 분리, 간단한 가독성 점수 유틸리티를 만들어라.",
+        "completed_skills": [], "current_goal": None, "acceptance_criteria": None, "retrieved_skills": [],
+        "code": None, "exec_result": None, "exec_vars": {}, "verification": None,
+        "attempts": 0, "max_attempts": 3, "goals_completed": 0, "max_goals": 3, "done": False,
+    }
+    result = app.invoke(initial_state, config={"configurable": {"thread_id": "session-1"}}, context=AgentContext(user_id="demo_user"))
+    print("Completed skills:", result["completed_skills"])`;
+
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("code[id]").forEach(function (el) {
+    if (CODE[el.id] !== undefined) {
+      el.textContent = CODE[el.id];
+    }
+  });
+  if (window.hljs) {
+    hljs.highlightAll();
+  }
+});
+</script>
