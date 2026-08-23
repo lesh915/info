@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>그래프 엔지니어링 상세 가이드 — AI 에이전트 오케스트레이션 아키텍처</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<style>
+  :root{
+    --ink:#10151f;
+    --ink-soft:#1b2331;
+    --paper:#fbf9f4;
+    --paper-dim:#f2efe6;
+    --rule:#ddd6c4;
+    --text:#20242c;
+    --text-dim:#565c66;
+    --teal:#1e8a79;
+    --teal-deep:#12554b;
+    --amber:#c9782f;
+    --purple:#5b52d6;
+    --red:#b3432f;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--text);
+    font-family:'Noto Sans KR', sans-serif;
+    line-height:1.75;
+    font-size:16.5px;
+  }
+  ::selection{background:#c9e8e2;}
+  h1,h2,h3,h4{
+    font-family:'Noto Serif KR', serif;
+    color:var(--ink);
+    line-height:1.35;
+    letter-spacing:-0.01em;
+  }
+  a{color:var(--teal-deep);}
+  code, pre, .mono{font-family:'JetBrains Mono', monospace;}
+
+  /* ===== Header ===== */
+  header.hero{
+    background:
+      radial-gradient(circle at 15% 20%, rgba(30,138,121,0.35), transparent 45%),
+      radial-gradient(circle at 85% 75%, rgba(91,82,214,0.28), transparent 50%),
+      var(--ink);
+    color:#f2efe6;
+    padding:76px 8vw 64px;
+    position:relative;
+    overflow:hidden;
+  }
+  header.hero .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:#8fd6c8;
+    margin-bottom:18px;
+  }
+  header.hero h1{
+    color:#fbf9f4;
+    font-size:clamp(30px,4.4vw,52px);
+    max-width:14ch;
+    margin:0 0 18px;
+    font-weight:700;
+  }
+  header.hero p.lede{
+    max-width:62ch;
+    color:#c9cdd6;
+    font-size:17.5px;
+    margin:0 0 30px;
+  }
+  header.hero .meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:#93a0ad;
+    border-top:1px solid #333c4c;
+    padding-top:20px;
+    max-width:640px;
+  }
+  header.hero .meta b{color:#dfe3e8; font-weight:500;}
+
+  /* graph motif svg */
+  .motif{position:absolute; right:-40px; top:-40px; opacity:0.5; width:420px; pointer-events:none;}
+
+  nav.toc{
+    max-width:900px;
+    margin:-34px auto 60px;
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:22px 28px;
+    box-shadow:0 12px 30px -18px rgba(16,21,31,0.35);
+    position:relative;
+    z-index:2;
+  }
+  nav.toc h2{font-size:13px; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); margin:0 0 12px; font-family:'JetBrains Mono',monospace; font-weight:500;}
+  nav.toc ol{margin:0; padding-left:22px; columns:2; column-gap:32px;}
+  nav.toc li{margin-bottom:7px; font-size:14.5px;}
+  nav.toc a{text-decoration:none; color:var(--text);}
+  nav.toc a:hover{color:var(--teal-deep);}
+
+  main{max-width:900px; margin:0 auto; padding:0 8vw 100px;}
+
+  section{margin-top:74px; scroll-margin-top:24px;}
+  section .num{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--teal);
+    font-size:13px;
+    letter-spacing:0.1em;
+    margin-bottom:6px;
+    display:block;
+  }
+  section > h2{font-size:clamp(24px,3vw,32px); margin:0 0 22px; padding-bottom:16px; border-bottom:2px solid var(--ink);}
+  h3{font-size:20px; margin:38px 0 12px;}
+  h4{font-size:16.5px; margin:26px 0 10px; color:var(--teal-deep);}
+  p{margin:0 0 16px;}
+  ul,ol{padding-left:22px; margin:0 0 16px;}
+  li{margin-bottom:6px;}
+
+  .lead{font-size:18.5px; color:var(--text-dim); font-family:'Noto Serif KR',serif;}
+
+  .callout{
+    border-left:3px solid var(--teal);
+    background:var(--paper-dim);
+    padding:16px 20px;
+    margin:24px 0;
+    border-radius:0 4px 4px 0;
+    font-size:15px;
+  }
+  .callout.warn{border-left-color:var(--amber);}
+  .callout.crit{border-left-color:var(--red);}
+  .callout b{color:var(--ink);}
+  .callout .tag{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--teal-deep); display:block; margin-bottom:6px;}
+  .callout.warn .tag{color:var(--amber);}
+  .callout.crit .tag{color:var(--red);}
+
+  figure{margin:30px 0;}
+  figure .diagram-wrap{
+    background:#fff;
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:22px 10px;
+    overflow-x:auto;
+  }
+  figcaption{
+    font-size:13px;
+    color:var(--text-dim);
+    margin-top:10px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  figcaption b{color:var(--text);}
+
+  pre{
+    background:var(--ink);
+    color:#e6e9ef;
+    padding:20px 22px;
+    border-radius:6px;
+    overflow-x:auto;
+    font-size:13.4px;
+    line-height:1.65;
+    margin:20px 0;
+  }
+  pre code{color:inherit;}
+  .codelabel{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    margin:22px 0 -10px;
+  }
+  code.inline{
+    background:var(--paper-dim);
+    border:1px solid var(--rule);
+    border-radius:3px;
+    padding:1px 6px;
+    font-size:0.9em;
+    color:var(--teal-deep);
+  }
+
+  table{width:100%; border-collapse:collapse; margin:22px 0; font-size:14.5px;}
+  th,td{border:1px solid var(--rule); padding:10px 13px; text-align:left; vertical-align:top;}
+  th{background:var(--ink); color:#f2efe6; font-family:'JetBrains Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; font-weight:500;}
+  tr:nth-child(even) td{background:var(--paper-dim);}
+
+  .cite{font-size:0.72em; vertical-align:super; color:var(--teal-deep); text-decoration:none; font-weight:600;}
+
+  .cardgrid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:22px 0;}
+  @media (max-width:720px){.cardgrid{grid-template-columns:1fr;} nav.toc ol{columns:1;}}
+  .card{border:1px solid var(--rule); border-radius:6px; padding:18px 20px; background:#fff;}
+  .card h4{margin-top:0;}
+  .card .k{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--amber); text-transform:uppercase; letter-spacing:0.08em;}
+
+  hr.rule{border:none; border-top:1px solid var(--rule); margin:56px 0;}
+
+  #refs{margin-top:80px; padding-top:36px; border-top:2px solid var(--ink);}
+  #refs ol{padding-left:20px;}
+  #refs li{font-size:13.6px; margin-bottom:10px; color:var(--text-dim); word-break:break-all;}
+  #refs li b{color:var(--text); word-break:keep-all;}
+  #refs a{color:var(--teal-deep);}
+
+  footer.pagefoot{
+    max-width:900px; margin:0 auto; padding:0 8vw 80px; color:var(--text-dim); font-size:13px; font-family:'JetBrains Mono',monospace;
+  }
+
+  .badge{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.06em; padding:3px 9px; border-radius:99px; border:1px solid currentColor; margin-right:8px;
+  }
+  .badge.a{color:var(--teal-deep);}
+  .badge.b{color:var(--amber);}
+  .badge.c{color:var(--purple);}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="motif" viewBox="0 0 400 400" fill="none">
+    <circle cx="80" cy="80" r="7" fill="#8fd6c8"/>
+    <circle cx="220" cy="50" r="5" fill="#a99cff"/>
+    <circle cx="330" cy="140" r="8" fill="#8fd6c8"/>
+    <circle cx="150" cy="190" r="6" fill="#e0b07a"/>
+    <circle cx="300" cy="260" r="5" fill="#8fd6c8"/>
+    <circle cx="60" cy="260" r="6" fill="#a99cff"/>
+    <line x1="80" y1="80" x2="220" y2="50" stroke="#3a4658" stroke-width="1.5"/>
+    <line x1="220" y1="50" x2="330" y2="140" stroke="#3a4658" stroke-width="1.5"/>
+    <line x1="80" y1="80" x2="150" y2="190" stroke="#3a4658" stroke-width="1.5"/>
+    <line x1="150" y1="190" x2="330" y2="140" stroke="#3a4658" stroke-width="1.5"/>
+    <line x1="150" y1="190" x2="300" y2="260" stroke="#3a4658" stroke-width="1.5"/>
+    <line x1="150" y1="190" x2="60" y2="260" stroke="#3a4658" stroke-width="1.5"/>
+  </svg>
+  <div class="eyebrow">Agent Engineering / Technical Guide</div>
+  <h1>그래프 엔지니어링<br>상세 기술 가이드</h1>
+  <p class="lede">AI 에이전트 오케스트레이션을 그래프 구조로 설계하는 방법론을 검토한다. 기존 루프 엔지니어링(Loop Engineering)과의 개념적 차이, LangGraph 기반 실전 개발 방법을 다루며, 모든 서술은 공개 출처에 근거한다.</p>
+  <div class="meta">
+    <span><b>대상 독자</b> AI 에이전트 개발자 · 그래프 엔지니어</span>
+    <span><b>범위</b> 오케스트레이션 아키텍처 (지식그래프/온톨로지 아님)</span>
+    <span><b>기준 시점</b> 2026년 8월</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#s1">그래프 엔지니어링이란 무엇인가</a></li>
+    <li><a href="#s2">배경 지식 — 루프 엔지니어링과 ReAct</a></li>
+    <li><a href="#s3">루프 엔지니어링 vs 그래프 엔지니어링</a></li>
+    <li><a href="#s4">그래프 엔지니어링 아키텍처</a></li>
+    <li><a href="#s5">LangGraph 기반 개발 가이드</a></li>
+    <li><a href="#s6">토폴로지 구현: Supervisor · Swarm · Router</a></li>
+    <li><a href="#s7">선택 프레임워크와 안티패턴</a></li>
+    <li><a href="#refs">참고문헌</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============ SECTION 1 ============ -->
+<section id="s1">
+  <span class="num">01 / 07</span>
+  <h2>그래프 엔지니어링이란 무엇인가</h2>
+
+  <p class="lead">그래프 엔지니어링(Graph Engineering)은 여러 개의 에이전트·도구·단계를 노드(node)와 엣지(edge)로 이루어진 명시적 제어 흐름 위에서 조율하는 오케스트레이션 설계 방식을 가리키는 용어다. TrueFoundry의 실무 정의에 따르면, 그래프 엔지니어링은 <b>런타임 작업 그래프(work graph)가 어떻게 형성되고 변화하는지</b>를 다루는 반면, 루프 엔지니어링은 <b>개별 에이전트 노드 하나가 내부적으로 어떻게 실행되는지</b>를 다룬다는 점에서 서로 다른 추상화 층위에 위치한다.<a class="cite" href="#ref1">[1]</a></p>
+
+  <h3>용어의 등장 배경</h3>
+  <p>"그래프 엔지니어링"은 완전히 새로운 개념이라기보다, 2026년 중반 소셜미디어(X)에서 벌어진 용어 논쟁을 통해 대중화된 표현이다. 이보다 몇 주 앞서, Claude Code를 개발한 Anthropic의 Boris Cherny와 OpenClaw 제작자 Peter Steinberger가 "더 이상 프롬프트를 작성하지 않고, 프롬프트를 생성하는 루프를 설계한다"는 취지의 발언을 하면서 <b>루프 엔지니어링</b>이라는 표현이 AI 엔지니어링 커뮤니티에서 지배적인 용어로 자리잡았다. 이후 여러 에이전트가 서로 어떻게 조율되는지를 설명하기 위한 후속 용어로 <b>그래프 엔지니어링</b>이 등장했다.<a class="cite" href="#ref21">[21]</a></p>
+
+  <p>2026년 7월, Andrew Ng의 지식그래프 강좌 발표와 Linear의 자율 반복 실행 기능 "Loops" 출시가 겹치면서 X에서 "에이전트 오케스트레이션은 그래프인가, 루프인가"라는 논쟁이 재점화되었다. 이 논쟁에서 LangChain 창립자 Harrison Chase는 "그래프 엔지니어링이 정확히 무엇인지는 잘 모르겠지만, 결국 LangGraph를 가리키는 것 같다"는 취지로 반응했으며, 이 발언은 실제로 많은 개발자들이 두 개념(지식그래프 데이터 구조와 LangGraph 오케스트레이션 프레임워크)을 혼동하고 있었음을 보여준다.<a class="cite" href="#ref2">[2]</a></p>
+
+  <div class="callout">
+    <span class="tag">용어 정리 — 두 개의 서로 다른 "그래프"</span>
+    본 문서가 다루는 <b>그래프 엔지니어링(오케스트레이션)</b>은 에이전트·도구·단계 간의 실행 순서와 제어 흐름을 그래프로 모델링하는 것을 말한다. 이는 사용자가 별도로 다루고 있는 <b>지식그래프/온톨로지(Neo4j 기반 데이터 구조)</b>와는 노드·엣지라는 용어만 공유할 뿐, 서로 다른 개념이다. 설명 확인 출처.<a class="cite" href="#ref2">[2]</a>
+  </div>
+
+  <h3>비판적 관점 — "재브랜딩"이라는 시각</h3>
+  <p>객관성을 위해 반대 의견도 함께 정리한다. AI Builder Club과 Louis Bouchard의 분석은 공통적으로, 그래프 형태의 오케스트레이션 자체는 전혀 새로운 것이 아니라고 지적한다. State-machine 및 그래프 오케스트레이션은 LangGraph, Microsoft AutoGen, Google ADK 등에서 이미 오래전부터 구현되어 있었으며, 더 거슬러 올라가면 Airflow와 같은 DAG 기반 워크플로 엔진, 그리고 Anthropic이 2024년 말 공개한 <i>Building Effective Agents</i> 글에서 이미 체이닝·라우팅·병렬화·오케스트레이터-워커·평가자-최적화자라는 다섯 가지 패턴으로 정리된 바 있다. 즉 2026년 7월에 새로워진 것은 아키텍처 자체가 아니라 <b>어휘(vocabulary)</b>라는 것이 이들의 결론이다.<a class="cite" href="#ref6">[6]</a><a class="cite" href="#ref3">[3]</a></p>
+
+  <p>반대로 실무 옹호 진영(TrueFoundry, Eigent)은 이 용어가 최소한 실무에서 유용한 구분을 제공한다고 본다 — 즉 "에이전트 하나의 실행 루프를 어떻게 안정화할 것인가"라는 문제와 "여러 루프를 어떻게 병렬화·거버넌스·감사할 것인가"라는 문제는 실제로 서로 다른 엔지니어링 관심사이며, 이를 구분해서 부르는 것 자체가 실익이 있다는 입장이다.<a class="cite" href="#ref1">[1]</a><a class="cite" href="#ref4">[4]</a></p>
+
+  <p>이 가이드는 "그래프 엔지니어링"을 하나의 확정된 표준 용어가 아니라, <b>실무에서 관찰되는 아키텍처 패턴에 최근 붙여진 이름</b>으로 취급하며, 패턴 자체의 기술적 실체(LangGraph 등 프레임워크가 실제로 구현하고 있는 것)에 초점을 맞춘다.</p>
+</section>
+
+<hr class="rule">
+
+<!-- ============ SECTION 2 ============ -->
+<section id="s2">
+  <span class="num">02 / 07</span>
+  <h2>배경 지식 — 루프 엔지니어링과 ReAct 패턴</h2>
+
+  <p>그래프 엔지니어링을 이해하려면 먼저 그것이 조율하는 대상, 즉 개별 에이전트의 실행 단위인 <b>에이전트 루프(agent loop)</b>를 이해해야 한다. 에이전트 루프란 LLM이 반복적으로 (1) 추론하고 (2) 행동(도구 호출)하고 (3) 결과를 관찰한 뒤 다음 행동을 결정하는 반복 구조를 말한다. 가장 단순한 형태로는 while 루프 안에서 LLM이 도구를 호출하는 구조에 불과하다.<a class="cite" href="#ref8">[8]</a></p>
+
+  <h3>ReAct: Thought → Action → Observation</h3>
+  <p>이 패턴을 정식화한 것이 2022년 Yao 등이 제안한 <b>ReAct(Reasoning + Acting)</b> 프레임워크다. ReAct는 추론(Thought)과 행동(Action)을 별도 단계로 분리하지 않고 하나의 반복 사이클 안에서 교차시킨다. 매 사이클마다 모델은 현재 상태를 해석하는 <i>Thought</i>를 생성하고, 도구를 호출하는 <i>Action</i>을 선택하며, 그 결과인 <i>Observation</i>을 다시 컨텍스트에 반영해 다음 추론에 활용한다.<a class="cite" href="#ref12">[12]</a><a class="cite" href="#ref9">[9]</a></p>
+
+  <figure>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+sequenceDiagram
+    participant U as 사용자 요청
+    participant M as LLM (추론)
+    participant T as 도구 / 환경
+    U->>M: 목표 전달
+    loop ReAct 사이클
+        M->>M: Thought (다음 행동 결정)
+        M->>T: Action (도구 호출)
+        T-->>M: Observation (실행 결과)
+    end
+    M-->>U: Final Answer
+      </div>
+    </div>
+    <figcaption><b>그림 1.</b> ReAct 루프의 Thought–Action–Observation 순환 구조. 조기 연구에서 이 상호 강화 구조는 ALFWorld 대비 34%, WebShop 대비 10%의 성능 향상을 보였다.<a class="cite" href="#ref14">[14]</a></figcaption>
+  </figure>
+
+  <p>ReAct는 현재 대부분의 프로덕션 에이전트(LangChain의 AgentExecutor, 다수의 코딩 에이전트 등)에서 기본 오케스트레이션 패턴으로 채택되어 있으며, 루프 엔지니어링 작업의 출발점으로 간주된다.<a class="cite" href="#ref14">[14]</a> ReAct 이후 등장한 변형 패턴으로는 Plan-and-Execute(사전 계획 후 실행), ReWOO(추론과 관찰의 분리로 토큰 비용 절감), Reflexion(실패 후 자기 비평을 메모리에 저장해 재시도에 반영)이 있다.<a class="cite" href="#ref11">[11]</a></p>
+
+  <h3>단일 루프의 알려진 실패 모드</h3>
+  <table>
+    <tr><th>실패 모드</th><th>설명</th></tr>
+    <tr><td>무한 루프 (Infinite loop)</td><td>목표에 대한 명확한 검증 기준이 없어 에이전트가 끝없이 "개선"을 시도함. 2023년 AutoGPT 사례가 대표적으로 언급됨.</td></tr>
+    <tr><td>목표 표류 (Goal drift)</td><td>모호한 지시나 예상치 못한 도구 결과에 이끌려 관련은 있으나 다른 목표를 추구하게 됨.</td></tr>
+    <tr><td>컨텍스트 오버플로우</td><td>장시간 세션에서 컨텍스트 윈도우가 가득 차 추론 품질이 저하됨.</td></tr>
+    <tr><td>침묵 실패 (Silent failure)</td><td>실제 진전이 없음에도 확신에 찬 출력을 생성함.</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-dim);">출처: <a class="cite" href="#ref14">[14]</a></p>
+
+  <div class="callout">
+    <span class="tag">핵심 요약</span>
+    루프 엔지니어링은 <b>단일 에이전트가 자신의 목표를 향해 안정적으로 수렴하도록</b> 만드는 작업이다 — 검증기(verifier), 정지 조건, 컨텍스트 관리가 핵심 관심사다. 그래프 엔지니어링은 이런 루프 "여러 개"를 어떻게 배치·연결·감시할지를 다루는, 그 위층의 작업이다.
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ============ SECTION 3 ============ -->
+<section id="s3">
+  <span class="num">03 / 07</span>
+  <h2>루프 엔지니어링 vs 그래프 엔지니어링</h2>
+
+  <p>AI Builder Club의 정의가 실무적으로 명확하다: 그래프 엔지니어링은 <b>루프 위에 얹히는 오케스트레이터 레이어</b>다. 하나의 노드가 자기 자신을 향해 되돌아가는 엣지를 가지면 그것은 루프이고, 여러 개의 전문화된 노드와 라우팅이 추가되면 그래프가 된다.<a class="cite" href="#ref7">[7]</a></p>
+
+  <figure>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+graph LR
+  subgraph LOOP["단일 루프 — 하나의 에이전트"]
+    direction LR
+    A1((Agent)) -->|Action| T1[Tool]
+    T1 -->|Observation| A1
+    A1 -->|Done| E1([종료])
+  end
+      </div>
+    </div>
+    <figcaption><b>그림 2a.</b> 루프 엔지니어링: 단일 에이전트가 검증기/정지 조건을 갖고 자기 자신으로 되먹임되는 구조.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+graph TD
+  S([입력]) --> R{Router / Supervisor}
+  R -->|분류 A| N1((전문 에이전트 A))
+  R -->|분류 B| N2((전문 에이전트 B))
+  N1 -->|자체 루프| N1
+  N2 -->|자체 루프| N2
+  N1 --> C{품질 검증 Gate}
+  N2 --> C
+  C -->|재시도| R
+  C -->|승인| O([출력])
+      </div>
+    </div>
+    <figcaption><b>그림 2b.</b> 그래프 엔지니어링: 여러 개의 루프(전문 에이전트)를 노드로 감싸고, 그 사이의 라우팅·병렬 실행·거부권(veto)을 명시적 엣지로 정의한 구조. "그래프는 루프를 포함한다."<a class="cite" href="#ref3">[3]</a></figcaption>
+  </figure>
+
+  <h3>비교표</h3>
+  <table>
+    <tr><th>구분</th><th>루프 엔지니어링</th><th>그래프 엔지니어링</th></tr>
+    <tr><td>단위</td><td>단일 에이전트의 추론–행동–관찰 사이클</td><td>여러 노드(에이전트/도구/게이트) 간의 방향성 그래프</td></tr>
+    <tr><td>제어 흐름</td><td>암묵적 — 모델이 매 스텝 다음 행동을 결정</td><td>명시적 — 엣지·조건부 라우팅으로 사전에 구조화</td></tr>
+    <tr><td>병렬성</td><td>기본적으로 순차적</td><td>Fan-out/Fan-in으로 독립 노드 동시 실행 가능</td></tr>
+    <tr><td>상태 관리</td><td>단일 컨텍스트 윈도우 내 누적</td><td>노드별 격리된 상태 + 공유 State 스키마</td></tr>
+    <tr><td>관찰가능성</td><td>단일 실행 트레이스</td><td>노드/엣지 단위의 구조적 트레이스, 재현 가능한 체크포인트</td></tr>
+    <tr><td>실패 격리</td><td>실패가 전체 컨텍스트를 오염시키기 쉬움</td><td>서브그래프 단위로 실패를 격리 가능</td></tr>
+    <tr><td>적합한 문제</td><td>단일 목표, 명확한 검증기가 있는 반복 작업</td><td>여러 역할이 핸드오프·리뷰·병렬 조사를 필요로 하는 작업</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-dim);">출처를 종합해 재구성.<a class="cite" href="#ref7">[7]</a><a class="cite" href="#ref21">[21]</a><a class="cite" href="#ref4">[4]</a></p>
+</section>
+
+<hr class="rule">
+
+<!-- ============ SECTION 4 ============ -->
+<section id="s4">
+  <span class="num">04 / 07</span>
+  <h2>그래프 엔지니어링 아키텍처</h2>
+
+  <h3>4.1 원형(prototype) 패턴 — Anthropic의 5가지 워크플로 패턴</h3>
+  <p>Anthropic이 2024년 12월 공개한 엔지니어링 블로그 <i>Building Effective Agents</i>는 그래프 엔지니어링 논쟁에서 가장 자주 인용되는 선행 사례다. 이 글은 워크플로(사전에 정의된 코드 경로를 따르는 시스템)와 에이전트(모델이 스스로 프로세스와 도구 사용을 통제하는 시스템)를 구분하고, 다섯 가지 조합 가능한 워크플로 패턴을 제시한다.<a class="cite" href="#ref34">[34]</a></p>
+
+  <div class="cardgrid">
+    <div class="card"><span class="k">패턴 1</span><h4>프롬프트 체이닝</h4>작업을 순차적 LLM 호출로 분해하고, 각 단계 사이에 프로그래밍적 점검을 둔다. 번역, 문서 생성처럼 단계가 예측 가능한 저복잡도 작업에 적합.</div>
+    <div class="card"><span class="k">패턴 2</span><h4>라우팅</h4>입력을 분류해 전문화된 하위 프롬프트로 분기한다. 카테고리가 명확한 고객 문의 처리 등에 적합.</div>
+    <div class="card"><span class="k">패턴 3</span><h4>병렬화</h4>독립적인 하위 작업을 동시 실행(sectioning)하거나, 동일 작업을 여러 번 실행해 합의를 구한다(voting).</div>
+    <div class="card"><span class="k">패턴 4</span><h4>오케스트레이터-워커</h4>중앙 LLM이 실행 시점에 작업을 동적으로 분해해 워커에게 위임하고 결과를 종합한다. 하위 작업을 사전에 예측할 수 없는 코딩·리서치 작업에 적합.</div>
+    <div class="card"><span class="k">패턴 5</span><h4>평가자-최적화자</h4>한 LLM이 생성하고 다른 LLM이 평가·피드백하는 루프를 반복한다. 명확한 평가 기준이 있고 반복 개선이 유의미한 가치를 낼 때 효과적.</div>
+    <div class="card" style="background:var(--paper-dim);"><span class="k">공통 원칙</span><h4>단순함이 이긴다</h4>Anthropic은 "가장 성공적인 구현은 복잡한 프레임워크가 아니라 단순하고 조합 가능한 패턴을 사용한다"고 명시적으로 결론짓는다.<a class="cite" href="#ref34">[34]</a></div>
+  </div>
+
+  <p>이 다섯 패턴을 화이트보드에 그리면 곧 그래프가 된다는 것이 비판적 관점의 핵심 논거다 — 즉 그래프 엔지니어링이 다루는 실체는 이미 2024년에 이름을 갖고 있었다는 것이다.<a class="cite" href="#ref3">[3]</a></p>
+
+  <h3>4.2 작업 그래프와 4계층 루프 구조</h3>
+  <p>Eigent의 정리에 따르면, 에이전트 그래프에는 개념적으로 두 층위가 있다. <b>작업/태스크 그래프(work graph)</b>는 에이전트가 "무엇을" 하는지를 나타내며 노드는 도구·스킬·파일·하위 작업이다. 그 위에, 그래프 기반 에이전트 플랫폼은 통상 네 종류의 감시 루프를 층위별로 둔다.<a class="cite" href="#ref4">[4]</a></p>
+  <table>
+    <tr><th>루프 종류</th><th>관심사</th></tr>
+    <tr><td>운영 루프 (Operational)</td><td>작업별 성공률, 지연시간, 비용, 리소스 사용량</td></tr>
+    <tr><td>품질 루프 (Quality)</td><td>사람 또는 자동 평가 점수, 오류율, 안전성 검사</td></tr>
+    <tr><td>거버넌스 루프 (Governance)</td><td>목표치를 누가 설정하고, 누가 임계값을 조정할 수 있으며, 언제 변경을 배포하는지</td></tr>
+    <tr><td>감사 루프 (Audit)</td><td>지표가 여전히 실제 비즈니스 성과와 상관관계를 갖는지 주기적으로 점검</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-dim);">출처.<a class="cite" href="#ref4">[4]</a></p>
+
+  <h3>4.3 멀티에이전트 토폴로지 개관</h3>
+  <p>여러 에이전트를 그래프로 조율하는 방식은 크게 세 가지 토폴로지로 수렴한다 — 라우터, 슈퍼바이저, 스웜. 각각의 구현은 5절에서 코드와 함께 다룬다.</p>
+  <table>
+    <tr><th>토폴로지</th><th>제어 방식</th><th>특징</th></tr>
+    <tr><td>라우터 (Router)</td><td>단일 분류 단계가 입력을 분석해 정적으로 디스패치</td><td>대화 이력을 유지하지 않는 전처리 단계. 입력 카테고리가 명확할 때 적합.<a class="cite" href="#ref20">[20]</a></td></tr>
+    <tr><td>슈퍼바이저 (Supervisor)</td><td>중앙 에이전트가 매 턴마다 어떤 워커를 호출할지 동적으로 결정</td><td>전체 메시지 이력을 누적하므로 8~12회 왕복 이후 라우팅 정확도가 저하되는 경향이 보고됨.<a class="cite" href="#ref19">[19]</a></td></tr>
+    <tr><td>스웜 (Swarm)</td><td>중앙 조정자 없이 에이전트가 핸드오프 도구를 통해 서로 직접 제어를 이전</td><td>마지막으로 활성화된 에이전트를 기억해 다음 상호작용에서 이어감.<a class="cite" href="#ref23">[23]</a></td></tr>
+  </table>
+</section>
+
+<hr class="rule">
+
+<!-- ============ SECTION 5 ============ -->
+<section id="s5">
+  <span class="num">05 / 07</span>
+  <h2>LangGraph 기반 개발 가이드</h2>
+
+  <p>LangGraph는 LangChain Inc.가 2024년 공개한 오픈소스 Python/TypeScript 프레임워크로, 상태를 가진(stateful) 순환 그래프(cyclic directed graph)로 에이전트 워크플로를 모델링한다. 실무에서 "그래프 엔지니어링"이 지시하는 대상은 사실상 대부분 LangGraph의 실행 모델을 가리킨다는 것이 Harrison Chase의 논평에서도 확인된다.<a class="cite" href="#ref2">[2]</a> LangChain이 컴포넌트(프롬프트, 파서, RAG 파이프라인)를 조립하는 라이브러리라면, LangGraph는 그 컴포넌트들이 상태를 가진 순환 워크플로에 참여할 때 사용하는 더 저수준의 실행 엔진이다. 2026년 기준 LangChain의 에이전트 추상화 자체도 LangGraph 런타임 위에서 동작한다.<a class="cite" href="#ref13">[13]</a></p>
+
+  <h3>5.1 핵심 프리미티브</h3>
+  <div class="cardgrid">
+    <div class="card"><span class="k">State</span><h4>공유 상태</h4><code class="inline">TypedDict</code> 또는 Pydantic 모델로 정의되는, 모든 노드가 읽고 갱신하는 공유 객체. 특정 실행 전체에 걸친 에이전트의 지속 메모리 역할을 한다.<a class="cite" href="#ref13">[13]</a></div>
+    <div class="card"><span class="k">Node</span><h4>노드</h4>현재 상태를 받아 상태에 대한 부분 갱신을 반환하는 Python 함수. LangChain Runnable이나 컴파일된 서브그래프도 노드가 될 수 있다.<a class="cite" href="#ref17">[17]</a></div>
+    <div class="card"><span class="k">Edge</span><h4>엣지</h4>노드 간 전이. 무조건 엣지(A 다음 항상 B)와 조건부 엣지(라우팅 함수 결과에 따라 다음 노드를 선택)가 있으며, 조건부 엣지가 분기를 구현하는 방식이다.<a class="cite" href="#ref17">[17]</a></div>
+    <div class="card"><span class="k">Reducer</span><h4>리듀서</h4>여러 노드의 갱신을 하나의 상태 필드로 병합하는 규칙. 기본값은 "마지막 쓰기가 이긴다"이며, 메시지 목록처럼 누적이 필요한 필드는 concat 리듀서를 지정한다.<a class="cite" href="#ref17">[17]</a></div>
+  </div>
+
+  <p class="codelabel">Example 1 — 최소 StateGraph 정의</p>
+  <pre><code>from typing import TypedDict
+from langgraph.graph import StateGraph, END
+
+class TaskState(TypedDict):
+    request: str
+    draft: str
+    approved: bool
+
+def draft_node(state: TaskState) -> dict:
+    # LLM 호출로 초안 생성
+    return {"draft": llm_generate(state["request"])}
+
+def review_node(state: TaskState) -> dict:
+    # 별도 LLM 호출로 초안 검토
+    ok = llm_review(state["draft"])
+    return {"approved": ok}
+
+def route_after_review(state: TaskState) -> str:
+    return "publish" if state["approved"] else "draft"
+
+graph = StateGraph(TaskState)
+graph.add_node("draft", draft_node)
+graph.add_node("review", review_node)
+graph.set_entry_point("draft")
+graph.add_edge("draft", "review")
+graph.add_conditional_edges(
+    "review", route_after_review,
+    {"publish": END, "draft": "draft"},
+)
+
+app = graph.compile()
+result = app.invoke({"request": "분기 릴리스 노트 작성"})
+</code></pre>
+  <p style="font-size:14px;color:var(--text-dim);">위 <code class="inline">review → draft</code> 조건부 엣지는 "그래프 안에 내장된 평가자-최적화자 루프"에 해당한다 — 즉 그래프 엔지니어링과 루프 엔지니어링이 배타적이지 않고, 그래프의 노드 하나가 자기 자신에게 되돌아가는 순환을 갖는 것이 정확히 4.1의 패턴 5(평가자-최적화자)를 구현하는 방식이다.<a class="cite" href="#ref34">[34]</a></p>
+
+  <figure>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+graph LR
+  ST([START]) --> D[draft]
+  D --> R[review]
+  R -->|approved=False| D
+  R -->|approved=True| EN([END])
+      </div>
+    </div>
+    <figcaption><b>그림 3.</b> Example 1의 실행 그래프. 조건부 엣지 하나가 그래프 안에 루프를 내장한다.</figcaption>
+  </figure>
+
+  <h3>5.2 상태 누적과 리듀서 — 대화형 에이전트 루프</h3>
+  <p>도구를 반복 호출하는 ReAct 스타일 루프를 그래프 안에서 표현할 때는, 메시지가 누적되는 필드에 리듀서를 지정하고 "도구 호출이 남아있는가"를 조건부 엣지의 판단 기준으로 사용한다.</p>
+
+  <p class="codelabel">Example 2 — 그래프로 구현한 ReAct 루프</p>
+  <pre><code>from typing import Annotated, TypedDict
+from operator import add
+from langgraph.graph import StateGraph, END
+
+class AgentState(TypedDict):
+    messages: Annotated[list, add]   # 누적 리듀서
+
+def agent_node(state: AgentState) -> dict:
+    response = llm_with_tools.invoke(state["messages"])
+    return {"messages": [response]}
+
+def tool_node(state: AgentState) -> dict:
+    last = state["messages"][-1]
+    results = execute_tool_calls(last.tool_calls)
+    return {"messages": results}
+
+def should_continue(state: AgentState) -> str:
+    last = state["messages"][-1]
+    return "tools" if getattr(last, "tool_calls", None) else "end"
+
+graph = StateGraph(AgentState)
+graph.add_node("agent", agent_node)
+graph.add_node("tools", tool_node)
+graph.set_entry_point("agent")
+graph.add_conditional_edges("agent", should_continue, {"tools": "tools", "end": END})
+graph.add_edge("tools", "agent")   # ReAct의 Observation → 다음 Thought
+
+app = graph.compile()
+</code></pre>
+
+  <h3>5.3 체크포인터와 영속성</h3>
+  <p>컴파일된 그래프는 동기 호출(<code class="inline">invoke</code>), 스트리밍(<code class="inline">stream</code>), 사람의 개입을 위한 중단(interrupt), 그리고 모든 스텝에서의 체크포인트 저장을 지원한다.<a class="cite" href="#ref13">[13]</a> LangChain의 2026년 에이전트 엔지니어링 현황 보고서는 프로덕션 인시던트의 60% 이상이 상태 관리 문제와 관련되어 있다고 밝혔는데, 체크포인터는 이 문제에 대응하는 핵심 장치다.<a class="cite" href="#ref16">[16]</a></p>
+
+  <p class="codelabel">Example 3 — 스레드 기반 영속성과 사람 개입(interrupt)</p>
+  <pre><code>from langgraph.checkpoint.memory import InMemorySaver
+# 프로덕션에서는 Postgres/Redis 등 영속 백엔드 사용
+
+checkpointer = InMemorySaver()
+app = graph.compile(checkpointer=checkpointer, interrupt_before=["review"])
+
+config = {"configurable": {"thread_id": "case-2026-0823"}}
+app.invoke({"request": "..."}, config=config)
+
+# review 노드 직전에서 실행이 정지된다.
+# 사람이 상태를 확인/수정한 뒤 동일 thread_id로 재개:
+app.invoke(None, config=config)
+</code></pre>
+  <p>같은 <code class="inline">thread_id</code>로 다시 호출하면 중단된 지점부터 정확히 재개되며, 이는 LangGraph가 "interrupt-and-resume을 1급 시민(first-class primitive)으로 취급한다"는 특징에서 비롯한다.<a class="cite" href="#ref14">[14]</a></p>
+
+  <h3>5.4 서브그래프를 통한 컨텍스트 격리</h3>
+  <p>슈퍼바이저 패턴에서 전체 메시지 이력이 누적되면 라우팅 정확도가 저하되는 문제가 보고된다. LangGraph는 컴파일된 그래프 전체를 부모 그래프의 노드로 중첩(nested subgraph)할 수 있게 하여, 팀 단위로 상태를 격리한다.<a class="cite" href="#ref19">[19]</a></p>
+  <pre><code>research_team = research_graph.compile()   # 독립적으로 컴파일된 서브그래프
+
+parent = StateGraph(ParentState)
+parent.add_node("research_team", research_team)   # 서브그래프를 노드로 사용
+parent.add_node("writer", writer_node)
+parent.add_edge("research_team", "writer")
+</code></pre>
+</section>
+
+<hr class="rule">
+
+<!-- ============ SECTION 6 ============ -->
+<section id="s6">
+  <span class="num">06 / 07</span>
+  <h2>토폴로지 구현: Supervisor · Swarm · Router</h2>
+
+  <h3>6.1 슈퍼바이저 패턴</h3>
+  <p>슈퍼바이저는 모든 요청을 받아 어떤 워커를 호출할지 결정하고, 결과를 읽은 뒤 계속할지 종료할지 판단하는 중앙 오케스트레이터다.<a class="cite" href="#ref25">[25]</a></p>
+  <pre><code>from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import create_react_agent
+
+billing_agent = create_react_agent(llm, tools=billing_tools)
+tech_agent = create_react_agent(llm, tools=tech_tools)
+
+def supervisor_node(state: SupState) -> dict:
+    decision = supervisor_llm.invoke(state["messages"])
+    return {"next": decision.next_worker}   # "billing" | "tech" | "done"
+
+def route(state: SupState) -> str:
+    return state["next"]
+
+graph = StateGraph(SupState)
+graph.add_node("supervisor", supervisor_node)
+graph.add_node("billing", billing_agent)
+graph.add_node("tech", tech_agent)
+graph.set_entry_point("supervisor")
+graph.add_conditional_edges("supervisor", route,
+    {"billing": "billing", "tech": "tech", "done": END})
+graph.add_edge("billing", "supervisor")
+graph.add_edge("tech", "supervisor")
+</code></pre>
+
+  <h3>6.2 스웜 패턴 — Command 기반 핸드오프</h3>
+  <p>스웜은 중앙 조정자 없이 에이전트가 핸드오프 도구를 호출해 서로 직접 제어를 이전한다. 핸드오프 도구는 <code class="inline">Command(goto=..., graph=Command.PARENT)</code>를 반환하여 부모 그래프의 상태를 갱신하며 다음 노드로 이동시킨다.<a class="cite" href="#ref28">[28]</a></p>
+  <pre><code>from langgraph.types import Command
+from langchain_core.tools import tool
+
+@tool
+def handoff_to_tech(reason: str) -> Command:
+    """기술 지원이 필요할 때 기술 에이전트로 전환한다."""
+    return Command(
+        goto="tech_agent",
+        graph=Command.PARENT,
+        update={"handoff_reason": reason},
+    )
+</code></pre>
+  <p>마지막으로 활성화된 에이전트를 시스템이 기억하기 때문에, 다음 사용자 메시지가 들어오면 그 에이전트부터 대화가 재개된다.<a class="cite" href="#ref27">[27]</a></p>
+
+  <h3>6.3 라우터 패턴 — Send를 이용한 병렬 팬아웃</h3>
+  <p>라우터는 입력을 분류해 정적으로 디스패치하는 전처리 단계로, 대화 이력을 유지하지 않는다. <code class="inline">Send</code> API를 사용하면 분류 결과에 따라 여러 전문 에이전트로 동시에 팬아웃할 수 있다.<a class="cite" href="#ref20">[20]</a></p>
+  <pre><code>from langgraph.types import Send
+
+def route_query(state: State) -> list[Send]:
+    classifications = classify_query(state["query"])
+    return [Send(c["agent"], {"query": c["query"]}) for c in classifications]
+
+graph.add_conditional_edges("classify", route_query)
+</code></pre>
+
+  <figure>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+graph TD
+  IN([입력]) --> CLS{분류}
+  CLS -->|Send| RA[리서치 에이전트]
+  CLS -->|Send| FA[재무 에이전트]
+  CLS -->|Send| LA[법무 에이전트]
+  RA --> AGG[결과 취합]
+  FA --> AGG
+  LA --> AGG
+  AGG --> OUT([출력])
+      </div>
+    </div>
+    <figcaption><b>그림 4.</b> Send 기반 라우터 팬아웃 — 병렬화 패턴(4.1의 패턴 3)의 그래프 구현.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="tag">선택 기준</span>
+    <b>라우터</b>는 입력 카테고리가 명확하고 결정적 디스패치로 충분할 때. <b>슈퍼바이저</b>는 대화가 여러 턴에 걸쳐 진화하며 LLM이 문맥에 따라 다음 행동을 유연하게 결정해야 할 때. <b>스웜</b>은 중앙 병목 없이 대등한 에이전트 간 직접 전환이 필요할 때 적합하다.<a class="cite" href="#ref20">[20]</a>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ============ SECTION 7 ============ -->
+<section id="s7">
+  <span class="num">07 / 07</span>
+  <h2>선택 프레임워크와 안티패턴</h2>
+
+  <h3>루프에서 그래프로 넘어가야 하는 신호</h3>
+  <p>AI Builder Club의 마이그레이션 가이드는 "루프로 시작해서, 필요해질 때만 그래프로 승격하라"는 원칙을 제시한다. 다음 네 가지 질문이 실무에서 반복적으로 사용되는 결정 기준이다.<a class="cite" href="#ref5">[5]</a><a class="cite" href="#ref22">[22]</a></p>
+  <ol>
+    <li>서로 다른 역할(리뷰어, 병렬 조사자, 거부권을 가진 검사자)이 필요한가?</li>
+    <li>일부 단계를 병렬로 실행해 지연시간을 줄일 필요가 있는가?</li>
+    <li>한 노드가 다른 노드의 컨텍스트를 오염시키지 않도록 격리가 필요한가?</li>
+    <li>각 노드가 다음 노드에 정확히 무엇을 넘기는지 명확히 정의할 수 있는가? (정의할 수 없다면 아직 분리할 준비가 되지 않은 것)</li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="tag">안티패턴 경고</span>
+    "밈에 대응한다고 40개짜리 에이전트 그래프를 밤새 돌리지 말 것." 과도하게 큰 그래프는 토큰 예산만 소모하고 실질적 진전은 거의 만들어내지 못하는 경우가 많다. 권장되는 접근은 검증 가능한 단일 반복 작업 하나에서 시작해, 상태를 눈으로 확인할 수 있는 UI와 지표를 갖추고, 실패 양상을 충분히 이해한 뒤에만 리뷰어·병렬 분기·거부권을 가진 보안 검사 등을 추가해 그래프로 성장시키는 것이다.<a class="cite" href="#ref3">[3]</a>
+  </div>
+
+  <h3>Anthropic의 워크플로 vs 에이전트 선택 기준 (참고)</h3>
+  <table>
+    <tr><th>복잡도</th><th>권장 패턴</th></tr>
+    <tr><td>낮음 — 단계가 예측 가능</td><td>워크플로 (체이닝 / 라우팅)</td></tr>
+    <tr><td>중간 — 하위 작업이 실행 시점에 결정됨</td><td>오케스트레이터-워커</td></tr>
+    <tr><td>높음 — 서로 다른 전문성이 필요</td><td>멀티에이전트 시스템</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-dim);">출처.<a class="cite" href="#ref39">[39]</a></p>
+
+  <div class="callout crit">
+    <span class="tag">공통된 결론</span>
+    본 가이드가 검토한 모든 출처가 동의하는 지점은 하나다 — <b>아키텍처 선택은 유행하는 용어가 아니라 실제 문제의 구조(병렬성 필요 여부, 역할 분리 필요 여부, 검증 가능성)에 의해 결정되어야 한다</b>는 것이다. "그래프 엔지니어링"이라는 이름 자체보다, LangGraph 등의 프레임워크가 실제로 제공하는 상태 관리·체크포인팅·조건부 라우팅이라는 구체적 도구가 문제 해결의 실체다.
+  </div>
+</section>
+
+<!-- ============ REFERENCES ============ -->
+<section id="refs">
+  <h2 style="border:none;">참고문헌</h2>
+  <ol>
+    <li id="ref1"><b>[1]</b> TrueFoundry — "Graph Engineering for Multi-Agent Systems: Architecture, Governance, and Observability" (2026) — <a href="https://www.truefoundry.com/blog/graph-engineering-enterprise-guide" target="_blank">truefoundry.com/blog/graph-engineering-enterprise-guide</a></li>
+    <li id="ref2"><b>[2]</b> explainx.ai — "Graphs vs. Loops: Agentic AI Orchestration Debate 2026" — <a href="https://explainx.ai/blog/graphs-vs-loops-agentic-ai-debate-linear-andrew-ng-2026" target="_blank">explainx.ai/blog/graphs-vs-loops-agentic-ai-debate-linear-andrew-ng-2026</a></li>
+    <li id="ref3"><b>[3]</b> Louis Bouchard — "Graph Engineering vs Loop Engineering: What Actually Changed" (2026) — <a href="https://www.louisbouchard.ai/graph-engineering-explained/" target="_blank">louisbouchard.ai/graph-engineering-explained</a></li>
+    <li id="ref4"><b>[4]</b> Eigent — "Graph Engineering for AI Agents" (2026) — <a href="https://www.eigent.ai/blog/graph-engineering-ai-agents" target="_blank">eigent.ai/blog/graph-engineering-ai-agents</a></li>
+    <li id="ref5"><b>[5]</b> AQE Digital — "Loop Engineering vs Graph Engineering: A Decision Framework for AI Agent Architecture" — <a href="https://www.aqedigital.com/blog/loop-engineering-vs-graph-engineering/" target="_blank">aqedigital.com/blog/loop-engineering-vs-graph-engineering</a></li>
+    <li id="ref6"><b>[6]</b> AI Builder Club — "Graph Engineering vs Loop Engineering" (2026) — <a href="https://www.aibuilderclub.com/blog/graph-engineering-vs-loop-engineering" target="_blank">aibuilderclub.com/blog/graph-engineering-vs-loop-engineering</a></li>
+    <li id="ref7"><b>[7]</b> AI Builder Club — "Graph vs Loop: Which Should Your Agent Use?" (2026) — <a href="https://www.aibuilderclub.com/blog/agent-graph-vs-loop-when-to-use" target="_blank">aibuilderclub.com/blog/agent-graph-vs-loop-when-to-use</a></li>
+    <li id="ref8"><b>[8]</b> Oracle Developers Blog — "What Is the AI Agent Loop? The Core Architecture Behind Autonomous AI Systems" — <a href="https://blogs.oracle.com/developers/what-is-the-ai-agent-loop-the-core-architecture-behind-autonomous-ai-systems" target="_blank">blogs.oracle.com/developers</a></li>
+    <li id="ref9"><b>[9]</b> MindStudio — "What Is the ReAct Loop? How AI Agents Reason, Act, and Iterate" (2026) — <a href="https://www.mindstudio.ai/blog/what-is-react-loop-ai-agent-reasoning" target="_blank">mindstudio.ai/blog/what-is-react-loop-ai-agent-reasoning</a></li>
+    <li id="ref11"><b>[11]</b> The AI Engineer (Substack) — "ReAct vs Plan-and-Execute vs ReWOO vs Reflexion" (2026) — <a href="https://theaiengineer.substack.com/p/the-4-single-agent-patterns" target="_blank">theaiengineer.substack.com</a></li>
+    <li id="ref12"><b>[12]</b> arXiv — "SemaClaw: A Step Towards General-Purpose Personal AI Agents through Harness Engineering", §2.1 (ReAct, Yao et al. 2023 인용) — <a href="https://arxiv.org/pdf/2604.11548" target="_blank">arxiv.org/pdf/2604.11548</a></li>
+    <li id="ref13"><b>[13]</b> Atlan — "What Is LangGraph? State, Agents & Production Use Cases 2026" — <a href="https://atlan.com/know/ai-agent/ai-agent-memory/what-is-langgraph/" target="_blank">atlan.com/know/ai-agent</a></li>
+    <li id="ref14"><b>[14]</b> Data Science Dojo — "Agentic loops explained: From ReAct to loop engineering (2026 guide)" — <a href="https://datasciencedojo.com/blog/agentic-loops-explained-from-react-to-loop-engineering-2026-guide/" target="_blank">datasciencedojo.com/blog</a></li>
+    <li id="ref16"><b>[16]</b> Easton — "LangGraph State: Checkpoints, Threads, and Recovery" (2026) — <a href="https://eastondev.com/blog/en/posts/ai/20260424-langgraph-agent-architecture/" target="_blank">eastondev.com/blog</a></li>
+    <li id="ref17"><b>[17]</b> LangChain Reference — "StateGraph" — <a href="https://reference.langchain.com/python/langgraph/graph/state/StateGraph" target="_blank">reference.langchain.com/python/langgraph</a></li>
+    <li id="ref19"><b>[19]</b> Augment Code — "Swarm vs. Supervisor: Multi-Agent Architecture Guide" (2026) — <a href="https://www.augmentcode.com/guides/swarm-vs-supervisor" target="_blank">augmentcode.com/guides/swarm-vs-supervisor</a></li>
+    <li id="ref20"><b>[20]</b> Docs by LangChain — "Router (multi-agent)" — <a href="https://docs.langchain.com/oss/python/langchain/multi-agent/router" target="_blank">docs.langchain.com/oss/python/langchain/multi-agent/router</a></li>
+    <li id="ref21"><b>[21]</b> AQE Digital — "Loop Engineering vs Graph Engineering: A Decision Framework" (Boris Cherny / Peter Steinberger 발언 인용) — <a href="https://www.aqedigital.com/blog/loop-engineering-vs-graph-engineering/" target="_blank">aqedigital.com</a></li>
+    <li id="ref22"><b>[22]</b> AI Builder Club — "Loop Engineering: Stop Writing Prompts, Start Writing Verifiers" (연계 문서) — <a href="https://www.aibuilderclub.com/blog/agent-graph-vs-loop-when-to-use" target="_blank">aibuilderclub.com</a></li>
+    <li id="ref23"><b>[23]</b> GitHub — langchain-ai/langgraph-swarm-py — <a href="https://github.com/langchain-ai/langgraph-swarm-py" target="_blank">github.com/langchain-ai/langgraph-swarm-py</a></li>
+    <li id="ref25"><b>[25]</b> Augment Code — "Swarm vs. Supervisor: Multi-Agent Architecture Guide" — <a href="https://www.augmentcode.com/guides/swarm-vs-supervisor" target="_blank">augmentcode.com/guides/swarm-vs-supervisor</a></li>
+    <li id="ref27"><b>[27]</b> LangChain Reference — "LangGraph Multi-Agent Swarm" — <a href="https://reference.langchain.com/python/langgraph-swarm" target="_blank">reference.langchain.com/python/langgraph-swarm</a></li>
+    <li id="ref28"><b>[28]</b> Focused — "How to Orchestrate Multi-Agent Systems in LangGraph (Supervisor vs Swarm Patterns)" (2026) — <a href="https://focused.io/lab/multi-agent-orchestration-in-langgraph-supervisor-vs-swarm-tradeoffs-and-architecture" target="_blank">focused.io/lab</a></li>
+    <li id="ref34"><b>[34]</b> Anthropic — "Building Effective Agents" (2024) — <a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank">anthropic.com/engineering/building-effective-agents</a></li>
+    <li id="ref39"><b>[39]</b> naitive.cloud — Anthropic "Building Effective Agents" 요약 정리 (워크플로 vs 에이전트 선택 기준 표) — <a href="https://blog.naitive.cloud/building-effective-agents/" target="_blank">blog.naitive.cloud/building-effective-agents</a></li>
+  </ol>
+</section>
+
+</main>
+
+<footer class="pagefoot">
+  그래프 엔지니어링 상세 가이드 · 2026-08-23 작성 · 모든 인용은 공개 웹 출처를 기준으로 하며, 인용 시점 이후 각 프레임워크의 API는 변경될 수 있음.
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose',
+    themeVariables: { primaryColor: '#f2efe6', primaryTextColor: '#20242c', primaryBorderColor: '#1e8a79', lineColor: '#565c66', fontFamily: 'JetBrains Mono, monospace' } });
+</script>
+</body>
+</html>
